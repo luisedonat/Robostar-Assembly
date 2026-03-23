@@ -1,0 +1,130 @@
+:root {
+  --color-deep-navy: #000028;
+  --color-dark-panel: #23233C;
+  --color-mid-panel: #333353;
+  --color-petrol: #009999;
+  --color-teal: #005159;
+  --color-light-petrol: #00C1B6;
+  --color-coral: #00CCCC;
+  --color-yellow: #FFD732;
+  --color-yellow-bright: #FFD00F;
+  --color-focus-blue: #199FFF;
+  --color-white: #FFFFFF;
+  --color-red: #D72339;
+  --color-deep-blue-800: #23233C;
+  --color-deep-blue-700: #40405E;
+  --color-sand-200: #F5F5F5;
+}
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--color-deep-navy);
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#game-container {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-deep-navy);
+}
+
+#game-canvas {
+  display: block;
+  max-width: 100%;
+  max-height: 100dvh;
+  width: auto;
+  height: auto;
+  aspect-ratio: 390 / 844;
+}
+
+@media (max-aspect-ratio: 390/844) {
+  #game-canvas {
+    width: 100%;
+    height: auto;
+  }
+}
+
+@media (min-aspect-ratio: 390/844) {
+  #game-canvas {
+    width: auto;
+    height: 100dvh;
+  }
+}
+
+/* --- Loading Screen --- */
+
+#loading-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-deep-navy);
+  z-index: 10;
+  transition: opacity 0.4s ease;
+}
+
+#loading-screen.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-title {
+  font-family: monospace;
+  font-size: 2.4rem;
+  font-weight: 900;
+  letter-spacing: 0.3em;
+  color: var(--color-petrol);
+  text-shadow: 0 0 12px rgba(0, 153, 153, 0.5);
+}
+
+.loading-subtitle {
+  font-family: monospace;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.5em;
+  color: var(--color-yellow);
+  margin-top: 0.25rem;
+}
+
+.loading-bar-track {
+  width: 180px;
+  height: 8px;
+  background: var(--color-dark-panel);
+  border: 1px solid var(--color-mid-panel);
+  margin-top: 2rem;
+  overflow: hidden;
+}
+
+.loading-bar-fill {
+  width: 0%;
+  height: 100%;
+  background: var(--color-petrol);
+  transition: width 0.2s ease;
+}
+
+.loading-text {
+  font-family: monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  color: var(--color-mid-panel);
+  margin-top: 0.75rem;
+}

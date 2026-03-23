@@ -1,0 +1,22 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Thumbnails
+Thumbs.db
+
+# Node (in case you add tooling later)
+node_modules/
+
+# Build artifacts
+dist/
+build/
