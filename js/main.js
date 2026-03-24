@@ -34,9 +34,10 @@ async function boot() {
   sprites.registerImage('roboarm_right', 'assets/sprites/smallSprites/roboarm_right_small.png');
   sprites.registerImage('roboleg',       'assets/sprites/smallSprites/roboleg_small.png');
   sprites.registerImage('robotFullFront','assets/sprites/robotFullFront.png');
+  sprites.registerImage('robostarFront', 'assets/sprites/2026_Robostar_front_03.png');
   setLoadProgress(55);
 
-  const ui = new UI();
+  const ui = new UI(sprites);
   const progress = new Progress();
   setLoadProgress(70);
 

@@ -6,7 +6,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <title>Robostar Assembly | Siemens</title>
-  <link rel="stylesheet" href="css/style.css">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <link rel="stylesheet" id="main-css">
 </head>
 <body>
   <div id="game-container">
@@ -20,6 +23,28 @@
       <div class="loading-text">INITIALIZING FACTORY...</div>
     </div>
   </div>
-  <script type="module" src="js/main.js"></script>
+  <script>
+    const v = Date.now();
+    document.getElementById('main-css').href = 'css/style.css?v=' + v;
+
+    const modules = [
+      'engine', 'input', 'level', 'main', 'player',
+      'progress', 'sprites', 'states', 'ui'
+    ];
+    const imports = {};
+    modules.forEach(m => {
+      imports['./js/' + m + '.js'] = './js/' + m + '.js?v=' + v;
+      imports['./' + m + '.js'] = './js/' + m + '.js?v=' + v;
+    });
+    const map = document.createElement('script');
+    map.type = 'importmap';
+    map.textContent = JSON.stringify({ imports });
+    document.head.appendChild(map);
+
+    const s = document.createElement('script');
+    s.type = 'module';
+    s.src = 'js/main.js?v=' + v;
+    document.body.appendChild(s);
+  </script>
 </body>
 </html>

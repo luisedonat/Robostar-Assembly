@@ -238,8 +238,8 @@ class DoodleJumpLevel {
     this._playerY = 0;
     this._playerVX = 0;
     this._playerVY = 0;
-    this._playerW = 55;
-    this._playerH = 72;
+    this._playerW = 60;
+    this._playerH = 66;
 
     this._platforms = [];
     this._scrollY = 0;
@@ -250,6 +250,8 @@ class DoodleJumpLevel {
     this._bounceVel = -390;
     this._moveSpeed = 160;
     this._dead = false;
+    this._swipeMomentum = 0;
+    this._swipeTimer = 0;
   }
 
   init(_progress) {
@@ -259,6 +261,8 @@ class DoodleJumpLevel {
     this._dead = false;
     this._scrollY = 0;
     this._maxReached = 0;
+    this._swipeMomentum = 0;
+    this._swipeTimer = 0;
 
     this._playerX = GAME_WIDTH / 2 - this._playerW / 2;
     this._playerY = GAME_HEIGHT - 120;
@@ -310,9 +314,12 @@ class DoodleJumpLevel {
       this.timerMs += dt * 1000;
     }
 
-    if (input.keys.left || (input.pointerDown && input.pointerX < GAME_WIDTH / 2)) {
+    if (input.pointerDown) {
+      this._playerX = input.pointerX - this._playerW / 2;
+      this._playerVX = 0;
+    } else if (input.keys.left) {
       this._playerVX = -this._moveSpeed;
-    } else if (input.keys.right || (input.pointerDown && input.pointerX >= GAME_WIDTH / 2)) {
+    } else if (input.keys.right) {
       this._playerVX = this._moveSpeed;
     } else {
       this._playerVX = 0;
@@ -423,7 +430,13 @@ class DoodleJumpLevel {
 
     const px = Math.round(this._playerX);
     const py = Math.round(this._playerY);
-    if (!sprites.drawImage(ctx, 'robotFullFront', px, py, this._playerW, this._playerH)) {
+    const img = sprites.getImage('robotFullFront');
+    if (img) {
+      const ratio = img.naturalWidth / img.naturalHeight;
+      const drawW = this._playerH * ratio;
+      const drawX = px + (this._playerW - drawW) / 2;
+      sprites.drawImage(ctx, 'robotFullFront', drawX, py, drawW, this._playerH);
+    } else {
       ctx.fillStyle = COLORS.petrol;
       ctx.fillRect(px, py, this._playerW, this._playerH);
     }
@@ -494,7 +507,7 @@ class CodePuzzleLevel {
     this._draggingIdx = -1;
 
     const slotX = (GAME_WIDTH - BLOCK_W) / 2;
-    const slotStartY = 120;
+    const slotStartY = 130;
 
     this._slots = CODE_BLOCKS.map((label, i) => ({
       label,
@@ -613,10 +626,14 @@ class CodePuzzleLevel {
     ctx.font = 'bold 16px system-ui, sans-serif';
     ctx.fillStyle = COLORS.petrol;
     ctx.textAlign = 'center';
-    ctx.fillText('PROGRAM ROBOSTAR AI', GAME_WIDTH / 2, 70);
+    ctx.fillText('PROGRAM ROBOSTAR AI', GAME_WIDTH / 2, 64);
+    ctx.font = '12px system-ui, sans-serif';
+    ctx.fillStyle = COLORS.yellow;
+    ctx.fillText('Drag each block to its numbered slot', GAME_WIDTH / 2, 82);
+    ctx.fillText('in the correct execution order.', GAME_WIDTH / 2, 98);
     ctx.font = '11px system-ui, sans-serif';
     ctx.fillStyle = COLORS.midPanel;
-    ctx.fillText('Industrial Edge / Xcelerator', GAME_WIDTH / 2, 88);
+    ctx.fillText('Industrial Edge / Xcelerator', GAME_WIDTH / 2, 116);
     ctx.restore();
 
     ctx.save();

@@ -100,11 +100,12 @@ export class PlayingState {
       const idx = this.level.index;
       const time = this.level.timerMs;
       this.progress.completeLevel(idx, time);
-      this.sm.change('levelComplete', {
-        levelIndex: idx,
-        timeMs: time,
-        partName: PARTS[idx],
-      });
+      if (this.progress.allComplete) {
+        this.sm.change('gameComplete');
+      } else {
+        const next = this.progress.nextLevelIndex;
+        this.sm.change('playing', { levelIndex: next });
+      }
     }
   }
 
@@ -168,13 +169,24 @@ export class GameCompleteState {
     this.ui = ui;
     this.input = input;
     this.progress = progress;
+    this._inputDelay = 0;
   }
 
-  enter() {}
+  enter() {
+    this._inputDelay = 0.8;
+    this.input.consumeTap();
+    this.input.consumeDragEnd();
+  }
+
   exit() {}
 
   update(dt) {
     this.ui.update(dt);
+    if (this._inputDelay > 0) {
+      this._inputDelay -= dt;
+      this.input.consumeTap();
+      return;
+    }
     if (this.input.consumeTap() || this.input.keys.action) {
       this.input.keys.action = false;
       this.progress.reset();

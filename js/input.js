@@ -31,6 +31,7 @@ export class Input {
     this._pointerDown = false;
     this._pointerX = 0;
     this._pointerY = 0;
+    this._completedSwipe = null;
 
     this._bindKeyboard();
     this._bindPointer();
@@ -142,6 +143,9 @@ export class Input {
         this._dragEndY = pos.y;
       }
 
+      if (this._swipe) {
+        this._completedSwipe = this._swipe;
+      }
       if (this._swipe === 'up') {
         this.keys.up = true;
         requestAnimationFrame(() => { this.keys.up = false; });
@@ -185,8 +189,9 @@ export class Input {
   }
 
   consumeSwipe() {
-    const dir = this._swipe;
+    const dir = this._completedSwipe || this._swipe;
     this._swipe = null;
+    this._completedSwipe = null;
     return dir;
   }
 
