@@ -583,16 +583,19 @@ class DoodleJumpLevel {
       return;
     }
 
-    if (!this._started && (input.pointerDown || input.keys.left || input.keys.right || input.keys.up)) {
+    if (!this._started && (input.pointerDown || input.keys.left || input.keys.right || input.keys.up || Math.abs(input.tiltX) > 0.1)) {
       this._started = true;
     }
     if (this._started && !this.completed) {
       this.timerMs += dt * 1000;
     }
 
+    // Movement priority: touch > tilt > keyboard
     if (input.pointerDown) {
       this._playerX = input.pointerX - this._playerW / 2;
       this._playerVX = 0;
+    } else if (input.tiltAvailable && Math.abs(input.tiltX) > 0.05) {
+      this._playerVX = input.tiltX * this._moveSpeed;
     } else if (input.keys.left) {
       this._playerVX = -this._moveSpeed;
     } else if (input.keys.right) {

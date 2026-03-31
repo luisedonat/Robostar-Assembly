@@ -60,6 +60,7 @@ export class MenuState {
       this.input.keys.action = false;
       unlockAudio();
       startBGM();
+      this.input.requestTiltPermission();   // request gyroscope access (iOS)
       this.progress.reset();
       const nextIdx = 0;
       this.sm.change('playing', { levelIndex: nextIdx });

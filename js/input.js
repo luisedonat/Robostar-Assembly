@@ -1,4 +1,6 @@
 const SWIPE_THRESHOLD = 30;
+const TILT_DEADZONE = 5;    // degrees of tilt before registering movement
+const TILT_MAX = 30;         // degrees at which tilt reaches full speed
 
 // Logical game dimensions (must match engine.js)
 const GAME_W = 390;
@@ -37,8 +39,15 @@ export class Input {
     this._pointerY = 0;
     this._completedSwipe = null;
 
+    // Tilt / gyroscope state
+    this._tiltX = 0;             // normalised –1 … +1
+    this._tiltRaw = 0;           // raw gamma degrees
+    this._tiltAvailable = false; // true once we receive a deviceorientation event
+    this._tiltPermission = false;// true once permission granted (iOS)
+
     this._bindKeyboard();
     this._bindPointer();
+    this._bindTilt();
   }
 
   _bindKeyboard() {
@@ -171,6 +180,68 @@ export class Input {
     el.style.touchAction = 'none';
   }
 
+  // ── Tilt / DeviceOrientation ──────────────────────────
+
+  _bindTilt() {
+    const handler = (e) => {
+      if (e.gamma == null) return;
+      this._tiltAvailable = true;
+      this._tiltRaw = e.gamma; // –90 … +90 (left/right tilt)
+
+      // Apply dead-zone and normalise to –1 … +1
+      let g = e.gamma;
+      if (Math.abs(g) < TILT_DEADZONE) {
+        this._tiltX = 0;
+      } else {
+        const sign = g > 0 ? 1 : -1;
+        const clamped = Math.min(Math.abs(g) - TILT_DEADZONE, TILT_MAX - TILT_DEADZONE);
+        this._tiltX = sign * (clamped / (TILT_MAX - TILT_DEADZONE));
+      }
+
+      // Set left/right keys from tilt when no touch is active
+      if (!this._pointerDown) {
+        this.keys.left = this._tiltX < -0.1;
+        this.keys.right = this._tiltX > 0.1;
+      }
+    };
+
+    // iOS 13+ requires explicit permission request
+    if (typeof DeviceOrientationEvent !== 'undefined' &&
+        typeof DeviceOrientationEvent.requestPermission === 'function') {
+      // Permission must be requested from a user gesture — we do it on first tap
+      this._tiltPermission = false;
+    } else {
+      // Android / desktop — just listen
+      window.addEventListener('deviceorientation', handler);
+      this._tiltPermission = true;
+    }
+
+    // Store handler so requestTiltPermission can attach it later
+    this._tiltHandler = handler;
+  }
+
+  /**
+   * Call from a user-gesture handler (e.g. first tap) to request
+   * DeviceOrientation permission on iOS.
+   */
+  async requestTiltPermission() {
+    if (this._tiltPermission) return true;
+    try {
+      if (typeof DeviceOrientationEvent !== 'undefined' &&
+          typeof DeviceOrientationEvent.requestPermission === 'function') {
+        const result = await DeviceOrientationEvent.requestPermission();
+        if (result === 'granted') {
+          window.addEventListener('deviceorientation', this._tiltHandler);
+          this._tiltPermission = true;
+          return true;
+        }
+      }
+    } catch (e) {
+      console.warn('Tilt permission denied:', e);
+    }
+    return false;
+  }
+
   get tap() { return this._tap; }
   get tapX() { return this._tapX; }
   get tapY() { return this._tapY; }
@@ -184,6 +255,11 @@ export class Input {
   get pointerDown() { return this._pointerDown; }
   get pointerX() { return this._pointerX; }
   get pointerY() { return this._pointerY; }
+
+  /** Normalised tilt: –1 (full left) … 0 (flat) … +1 (full right) */
+  get tiltX() { return this._tiltX; }
+  /** True once a deviceorientation event has been received */
+  get tiltAvailable() { return this._tiltAvailable; }
 
   consumeTap() {
     const was = this._tap;
