@@ -1,5 +1,6 @@
 import { COLORS } from './sprites.js';
 import { GAME_WIDTH, GAME_HEIGHT, TILE_SIZE } from './engine.js';
+import { playPartSnap, playJump, playCodeSlot, playBreak, playError } from './audio.js';
 
 const COLS = Math.floor(GAME_WIDTH / TILE_SIZE);
 const ROWS = Math.floor(GAME_HEIGHT / TILE_SIZE);
@@ -153,6 +154,9 @@ class BlueprintPuzzleLevel {
         p.x = snapX;
         p.y = snapY;
         p.placed = true;
+        playPartSnap();
+      } else {
+        playError();
       }
 
       this._draggingIdx = -1;
@@ -616,8 +620,10 @@ class DoodleJumpLevel {
         ) {
           this._playerVY = plat.spring ? this._bounceVel * 2 : this._bounceVel;
           this._playerY = py - this._playerH;
+          playJump();
           if (plat.breakable) {
             plat.broken = true;
+            playBreak();
           }
         }
       }
@@ -956,11 +962,13 @@ class CodePuzzleLevel {
           s.filled = true;
           s.filledLabel = b.label;
           snapped = true;
+          playCodeSlot();
         } else {
           // Wrong slot — bounce back
           b.x = b.homeX;
           b.y = b.homeY;
           snapped = true;
+          playError();
         }
       }
 

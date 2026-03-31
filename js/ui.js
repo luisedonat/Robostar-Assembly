@@ -1,8 +1,16 @@
 import { COLORS } from './sprites.js';
 import { GAME_WIDTH, GAME_HEIGHT } from './engine.js';
+import { toggleBGM, toggleSFX, isBGMOn, isSFXOn } from './audio.js';
 
 const FONT = "'Inter', 'Siemens Sans', 'Segoe UI', system-ui, -apple-system, sans-serif";
 const MONO = "'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace";
+
+// Mute button layout (top-right corner of HUD)
+const BTN_SIZE = 22;
+const BTN_GAP = 6;
+const BTN_Y = 7;
+const BTN_MUSIC_X = GAME_WIDTH - 14 - BTN_SIZE * 2 - BTN_GAP;
+const BTN_SFX_X = GAME_WIDTH - 14 - BTN_SIZE;
 
 export class UI {
   constructor(sprites) {
@@ -111,7 +119,97 @@ export class UI {
     ctx.fillStyle = COLORS.yellow;
     ctx.textBaseline = 'top';
     ctx.textAlign = 'right';
-    ctx.fillText(timeStr, GAME_WIDTH - 14, 36);
+    ctx.fillText(timeStr, BTN_MUSIC_X - 10, 36);
+    ctx.restore();
+
+    // ── Mute buttons ──
+    this._drawMuteBtn(ctx, BTN_MUSIC_X, BTN_Y, isBGMOn(), 'music');
+    this._drawMuteBtn(ctx, BTN_SFX_X, BTN_Y, isSFXOn(), 'sfx');
+  }
+
+  /** Check if a tap hit a mute button; returns true if consumed */
+  handleHUDTap(x, y) {
+    if (y >= BTN_Y && y <= BTN_Y + BTN_SIZE) {
+      if (x >= BTN_MUSIC_X && x <= BTN_MUSIC_X + BTN_SIZE) {
+        toggleBGM();
+        return true;
+      }
+      if (x >= BTN_SFX_X && x <= BTN_SFX_X + BTN_SIZE) {
+        toggleSFX();
+        return true;
+      }
+    }
+    return false;
+  }
+
+  _drawMuteBtn(ctx, x, y, isOn, type) {
+    ctx.save();
+
+    // Button background
+    this.drawRoundedRect(ctx, x, y, BTN_SIZE, BTN_SIZE, 5);
+    ctx.fillStyle = isOn ? COLORS.darkPanel + 'CC' : COLORS.darkPanel + '99';
+    ctx.fill();
+    ctx.strokeStyle = isOn ? COLORS.petrol + '80' : COLORS.midPanel + '50';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    const cx = x + BTN_SIZE / 2;
+    const cy = y + BTN_SIZE / 2;
+
+    ctx.strokeStyle = isOn ? COLORS.petrol : COLORS.midPanel;
+    ctx.fillStyle = isOn ? COLORS.petrol : COLORS.midPanel;
+    ctx.lineWidth = 1.5;
+    ctx.lineCap = 'round';
+
+    if (type === 'music') {
+      // ♪ Music note icon
+      // Note head
+      ctx.beginPath();
+      ctx.ellipse(cx - 3, cy + 3, 3, 2.2, -0.3, 0, Math.PI * 2);
+      ctx.fill();
+      // Stem
+      ctx.beginPath();
+      ctx.moveTo(cx, cy + 2);
+      ctx.lineTo(cx, cy - 5);
+      ctx.stroke();
+      // Flag
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - 5);
+      ctx.quadraticCurveTo(cx + 5, cy - 3, cx + 3, cy - 1);
+      ctx.stroke();
+    } else {
+      // Speaker icon
+      ctx.beginPath();
+      ctx.moveTo(cx - 4, cy - 2);
+      ctx.lineTo(cx - 1, cy - 2);
+      ctx.lineTo(cx + 3, cy - 5);
+      ctx.lineTo(cx + 3, cy + 5);
+      ctx.lineTo(cx - 1, cy + 2);
+      ctx.lineTo(cx - 4, cy + 2);
+      ctx.closePath();
+      ctx.fill();
+
+      if (isOn) {
+        // Sound waves
+        ctx.beginPath();
+        ctx.arc(cx + 3, cy, 4, -0.6, 0.6);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx + 3, cy, 7, -0.5, 0.5);
+        ctx.stroke();
+      }
+    }
+
+    // Strike-through line when muted
+    if (!isOn) {
+      ctx.strokeStyle = COLORS.red;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(x + 4, y + BTN_SIZE - 4);
+      ctx.lineTo(x + BTN_SIZE - 4, y + 4);
+      ctx.stroke();
+    }
+
     ctx.restore();
   }
 

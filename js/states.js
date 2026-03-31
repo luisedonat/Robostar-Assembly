@@ -1,5 +1,6 @@
 import { createLevel } from './level.js';
 import { PARTS } from './progress.js';
+import { playLevelComplete, playVictory, unlockAudio, startBGM, stopBGM } from './audio.js';
 
 export class StateMachine {
   constructor() {
@@ -57,6 +58,8 @@ export class MenuState {
     this.ui.update(dt);
     if (this.input.consumeTap() || this.input.keys.action) {
       this.input.keys.action = false;
+      unlockAudio();
+      startBGM();
       this.progress.reset();
       const nextIdx = 0;
       this.sm.change('playing', { levelIndex: nextIdx });
@@ -94,6 +97,13 @@ export class PlayingState {
     this.ui.update(dt);
     if (!this.level) return;
 
+    // Check for mute button taps before passing input to level
+    if (this.input.tap) {
+      if (this.ui.handleHUDTap(this.input.tapX, this.input.tapY)) {
+        this.input.consumeTap();
+      }
+    }
+
     this.level.update(dt, this.input);
 
     if (this.level.isComplete()) {
@@ -101,8 +111,10 @@ export class PlayingState {
       const time = this.level.timerMs;
       this.progress.completeLevel(idx, time);
       if (this.progress.allComplete) {
+        playVictory();
         this.sm.change('gameComplete');
       } else {
+        playLevelComplete();
         const next = this.progress.nextLevelIndex;
         this.sm.change('playing', { levelIndex: next });
       }
@@ -176,6 +188,7 @@ export class GameCompleteState {
     this._inputDelay = 0.8;
     this.input.consumeTap();
     this.input.consumeDragEnd();
+    stopBGM();
   }
 
   exit() {}
@@ -190,6 +203,7 @@ export class GameCompleteState {
     if (this.input.consumeTap() || this.input.keys.action) {
       this.input.keys.action = false;
       this.progress.reset();
+      startBGM();
       this.sm.change('menu');
     }
   }
