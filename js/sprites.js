@@ -7,7 +7,7 @@ const COLORS = {
   yellowBright:'#FFD00F',
   navy:        '#000028',
   darkPanel:   '#23233C',
-  midPanel:    '#333353',
+  midPanel:    '#40405E',
   white:       '#FFFFFF',
   red:         '#D72339',
   focusBlue:   '#199FFF',
@@ -37,6 +37,8 @@ export class SpriteSheet {
     const row = Math.floor(frameIndex / this.cols);
 
     ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     if (flipX) {
       ctx.translate(x + this.frameW, y);
       ctx.scale(-1, 1);
@@ -80,6 +82,8 @@ export class SpriteManager {
     const entry = this.images[name];
     if (!entry || !entry.loaded) return false;
     ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     if (flipX) {
       ctx.translate(x + w, y);
       ctx.scale(-1, 1);

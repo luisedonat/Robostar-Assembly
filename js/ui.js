@@ -1,8 +1,8 @@
 import { COLORS } from './sprites.js';
 import { GAME_WIDTH, GAME_HEIGHT } from './engine.js';
 
-const FONT = "'Segoe UI', system-ui, -apple-system, sans-serif";
-const MONO = 'monospace';
+const FONT = "'Inter', 'Siemens Sans', 'Segoe UI', system-ui, -apple-system, sans-serif";
+const MONO = "'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace";
 
 export class UI {
   constructor(sprites) {
@@ -16,7 +16,7 @@ export class UI {
 
   drawText(ctx, text, x, y, size = 16, color = COLORS.white, align = 'left', font = FONT) {
     ctx.save();
-    ctx.font = `bold ${size}px ${font}`;
+    ctx.font = `600 ${size}px ${font}`;
     ctx.fillStyle = color;
     ctx.textBaseline = 'top';
     ctx.textAlign = align;
@@ -28,33 +28,91 @@ export class UI {
     this.drawText(ctx, text, GAME_WIDTH / 2, y, size, color, 'center', font);
   }
 
-  drawBox(ctx, x, y, w, h, fill = COLORS.darkPanel, stroke = COLORS.midPanel) {
+  drawRoundedRect(ctx, x, y, w, h, r = 8) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  drawBox(ctx, x, y, w, h, fill = COLORS.darkPanel, stroke = COLORS.midPanel, radius = 8) {
+    ctx.save();
+    this.drawRoundedRect(ctx, x, y, w, h, radius);
     ctx.fillStyle = fill;
-    ctx.fillRect(x, y, w, h);
-    ctx.strokeStyle = stroke;
-    ctx.lineWidth = 1;
-    ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+    ctx.fill();
+    if (stroke) {
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   /* ---- HUD ---- */
 
   drawHUD(ctx, levelName, timerMs, parts) {
-    this.drawBox(ctx, 0, 0, GAME_WIDTH, 50, COLORS.navy + 'DD', COLORS.teal);
+    // Frosted top bar
+    ctx.save();
+    const grad = ctx.createLinearGradient(0, 0, 0, 56);
+    grad.addColorStop(0, COLORS.navy + 'F0');
+    grad.addColorStop(1, COLORS.navy + '00');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, GAME_WIDTH, 56);
+    ctx.restore();
 
-    const partIcons = ['1', '2', '3'];
+    // Part indicators — rounded pills
     const partColors = [COLORS.petrol, COLORS.teal, COLORS.lightPetrol];
+    const pillW = 24;
+    const pillH = 24;
+    const pillGap = 8;
+    const totalPillW = 3 * pillW + 2 * pillGap;
+    const startX = (GAME_WIDTH - totalPillW) / 2;
     for (let i = 0; i < 3; i++) {
-      const px = GAME_WIDTH / 2 - 36 + i * 26;
+      const px = startX + i * (pillW + pillGap);
       const active = parts[i];
-      ctx.fillStyle = active ? partColors[i] : COLORS.midPanel;
-      ctx.fillRect(px, 5, 20, 20);
-      this.drawText(ctx, partIcons[i], px + 5, 6, 14, active ? COLORS.white : COLORS.darkPanel);
+      ctx.save();
+      this.drawRoundedRect(ctx, px, 8, pillW, pillH, 6);
+      ctx.fillStyle = active ? partColors[i] : COLORS.darkPanel;
+      ctx.fill();
+      if (active) {
+        ctx.shadowColor = partColors[i];
+        ctx.shadowBlur = 8;
+      }
+      ctx.restore();
+      ctx.save();
+      ctx.font = `700 12px ${FONT}`;
+      ctx.fillStyle = active ? COLORS.white : COLORS.midPanel;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(i + 1), px + pillW / 2, 8 + pillH / 2);
+      ctx.restore();
     }
 
-    this.drawText(ctx, levelName, 10, 30, 12, COLORS.petrol);
+    // Level name
+    ctx.save();
+    ctx.font = `500 11px ${FONT}`;
+    ctx.fillStyle = COLORS.petrol;
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'left';
+    ctx.fillText(levelName, 14, 36);
+    ctx.restore();
 
+    // Timer
     const timeStr = this.formatTime(timerMs);
-    this.drawText(ctx, timeStr, GAME_WIDTH - 10, 30, 12, COLORS.yellow, 'right', MONO);
+    ctx.save();
+    ctx.font = `500 11px ${MONO}`;
+    ctx.fillStyle = COLORS.yellow;
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'right';
+    ctx.fillText(timeStr, GAME_WIDTH - 14, 36);
+    ctx.restore();
   }
 
   /* ---- Menu Screen ---- */
@@ -63,17 +121,45 @@ export class UI {
     ctx.fillStyle = COLORS.navy;
     ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-    this.drawTextCentered(ctx, 'ROBOSTAR', GAME_HEIGHT * 0.18, 42, COLORS.petrol);
-    this.drawTextCentered(ctx, 'ASSEMBLY', GAME_HEIGHT * 0.18 + 48, 24, COLORS.yellow);
+    // Title
+    ctx.save();
+    ctx.font = `800 40px ${FONT}`;
+    ctx.fillStyle = COLORS.petrol;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.letterSpacing = '0.08em';
+    ctx.fillText('ROBOSTAR', GAME_WIDTH / 2, GAME_HEIGHT * 0.18);
+    ctx.restore();
+
+    ctx.save();
+    ctx.font = `600 22px ${FONT}`;
+    ctx.fillStyle = COLORS.yellow;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('ASSEMBLY', GAME_WIDTH / 2, GAME_HEIGHT * 0.18 + 50);
+    ctx.restore();
 
     this._drawRobostarImage(ctx, GAME_WIDTH / 2, GAME_HEIGHT * 0.34, 160);
 
-    const show = Math.sin(this._blink * 3) > 0;
-    if (show) {
-      this.drawTextCentered(ctx, 'TAP TO START', GAME_HEIGHT * 0.68, 18, COLORS.coral);
-    }
+    // Pulsing call-to-action
+    const alpha = 0.5 + 0.5 * Math.sin(this._blink * 2.5);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.font = `600 16px ${FONT}`;
+    ctx.fillStyle = COLORS.coral;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('TAP TO START', GAME_WIDTH / 2, GAME_HEIGHT * 0.68);
+    ctx.restore();
 
-    this.drawTextCentered(ctx, 'POWERED BY SIEMENS', GAME_HEIGHT - 40, 12, COLORS.midPanel);
+    // Footer
+    ctx.save();
+    ctx.font = `500 11px ${FONT}`;
+    ctx.fillStyle = COLORS.midPanel;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('POWERED BY SIEMENS', GAME_WIDTH / 2, GAME_HEIGHT - 44);
+    ctx.restore();
   }
 
   /* ---- Level Complete ---- */
@@ -82,19 +168,59 @@ export class UI {
     ctx.fillStyle = COLORS.navy;
     ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-    this.drawTextCentered(ctx, 'LEVEL COMPLETE!', 100, 32, COLORS.petrol);
+    ctx.save();
+    ctx.font = `800 30px ${FONT}`;
+    ctx.fillStyle = COLORS.petrol;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('LEVEL COMPLETE!', GAME_WIDTH / 2, 100);
+    ctx.restore();
 
-    this.drawTextCentered(ctx, `TIME: ${this.formatTime(timeMs)}`, 160, 18, COLORS.yellow, MONO);
+    ctx.save();
+    ctx.font = `500 16px ${MONO}`;
+    ctx.fillStyle = COLORS.yellow;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(`TIME: ${this.formatTime(timeMs)}`, GAME_WIDTH / 2, 155);
+    ctx.restore();
 
-    this.drawTextCentered(ctx, 'NEW PART ASSEMBLED:', 230, 15, COLORS.midPanel);
-    this.drawTextCentered(ctx, partName.toUpperCase(), 260, 28, COLORS.lightPetrol);
+    // Divider line
+    ctx.save();
+    ctx.strokeStyle = COLORS.teal + '40';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(GAME_WIDTH * 0.2, 195);
+    ctx.lineTo(GAME_WIDTH * 0.8, 195);
+    ctx.stroke();
+    ctx.restore();
 
-    this._drawRobostarImage(ctx, GAME_WIDTH / 2, 320, 120);
+    ctx.save();
+    ctx.font = `500 13px ${FONT}`;
+    ctx.fillStyle = COLORS.midPanel;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('NEW PART ASSEMBLED:', GAME_WIDTH / 2, 220);
+    ctx.restore();
 
-    const show = Math.sin(this._blink * 3) > 0;
-    if (show) {
-      this.drawTextCentered(ctx, 'TAP TO CONTINUE', GAME_HEIGHT - 80, 18, COLORS.coral);
-    }
+    ctx.save();
+    ctx.font = `700 26px ${FONT}`;
+    ctx.fillStyle = COLORS.lightPetrol;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(partName.toUpperCase(), GAME_WIDTH / 2, 250);
+    ctx.restore();
+
+    this._drawRobostarImage(ctx, GAME_WIDTH / 2, 310, 120);
+
+    const alpha = 0.5 + 0.5 * Math.sin(this._blink * 2.5);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.font = `600 16px ${FONT}`;
+    ctx.fillStyle = COLORS.coral;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('TAP TO CONTINUE', GAME_WIDTH / 2, GAME_HEIGHT - 80);
+    ctx.restore();
   }
 
   /* ---- Game Complete ---- */
@@ -103,30 +229,102 @@ export class UI {
     ctx.fillStyle = COLORS.navy;
     ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-    this.drawTextCentered(ctx, 'ROBOSTAR', 60, 36, COLORS.yellow);
-    this.drawTextCentered(ctx, 'COMPLETE!', 100, 36, COLORS.yellow);
+    ctx.save();
+    ctx.font = `800 34px ${FONT}`;
+    ctx.fillStyle = COLORS.yellow;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('ROBOSTAR', GAME_WIDTH / 2, 60);
+    ctx.fillText('COMPLETE!', GAME_WIDTH / 2, 100);
+    ctx.restore();
 
     this._drawRobostarImage(ctx, GAME_WIDTH / 2, 160, 140);
 
-    this.drawTextCentered(ctx, 'ALL PARTS ASSEMBLED', 340, 18, COLORS.petrol);
+    ctx.save();
+    ctx.font = `600 16px ${FONT}`;
+    ctx.fillStyle = COLORS.petrol;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('ALL PARTS ASSEMBLED', GAME_WIDTH / 2, 340);
+    ctx.restore();
 
-    this.drawTextCentered(ctx, 'TOTAL TIME', 380, 15, COLORS.midPanel);
-    this.drawTextCentered(ctx, this.formatTime(progress.totalTime), 405, 26, COLORS.yellow, MONO);
+    // Total time card
+    this.drawBox(ctx, 40, 375, GAME_WIDTH - 80, 70, COLORS.darkPanel + 'CC', COLORS.teal + '60', 10);
 
-    this.drawTextCentered(ctx, '--- BEST TIMES ---', 460, 14, COLORS.teal);
+    ctx.save();
+    ctx.font = `500 12px ${FONT}`;
+    ctx.fillStyle = COLORS.midPanel;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('TOTAL TIME', GAME_WIDTH / 2, 388);
+    ctx.restore();
+
+    ctx.save();
+    ctx.font = `700 24px ${MONO}`;
+    ctx.fillStyle = COLORS.yellow;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(this.formatTime(progress.totalTime), GAME_WIDTH / 2, 412);
+    ctx.restore();
+
+    // Best times section
+    ctx.save();
+    ctx.font = `600 13px ${FONT}`;
+    ctx.fillStyle = COLORS.teal;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('BEST TIMES', GAME_WIDTH / 2, 468);
+    ctx.restore();
+
+    // Divider
+    ctx.save();
+    ctx.strokeStyle = COLORS.teal + '30';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(60, 490);
+    ctx.lineTo(GAME_WIDTH - 60, 490);
+    ctx.stroke();
+    ctx.restore();
+
     const labels = ['DESIGN', 'MANUFACTURING', 'SOFTWARE'];
     for (let i = 0; i < 3; i++) {
       const t = progress.data.bestTimes[i];
-      this.drawText(ctx, labels[i], 60, 490 + i * 30, 14, COLORS.lightPetrol);
-      this.drawText(ctx, this.formatTime(t), GAME_WIDTH - 60, 490 + i * 30, 14, COLORS.yellow, 'right', MONO);
+      const rowY = 504 + i * 36;
+
+      ctx.save();
+      ctx.font = `500 13px ${FONT}`;
+      ctx.fillStyle = COLORS.lightPetrol;
+      ctx.textBaseline = 'top';
+      ctx.textAlign = 'left';
+      ctx.fillText(labels[i], 60, rowY);
+      ctx.restore();
+
+      ctx.save();
+      ctx.font = `500 13px ${MONO}`;
+      ctx.fillStyle = COLORS.yellow;
+      ctx.textBaseline = 'top';
+      ctx.textAlign = 'right';
+      ctx.fillText(this.formatTime(t), GAME_WIDTH - 60, rowY);
+      ctx.restore();
     }
 
-    const show = Math.sin(this._blink * 3) > 0;
-    if (show) {
-      this.drawTextCentered(ctx, 'TAP TO REPLAY', GAME_HEIGHT - 120, 18, COLORS.coral);
-    }
+    const alpha = 0.5 + 0.5 * Math.sin(this._blink * 2.5);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.font = `600 16px ${FONT}`;
+    ctx.fillStyle = COLORS.coral;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('TAP TO REPLAY', GAME_WIDTH / 2, GAME_HEIGHT - 120);
+    ctx.restore();
 
-    this.drawTextCentered(ctx, 'POWERED BY SIEMENS TECHNOLOGY', GAME_HEIGHT - 30, 12, COLORS.midPanel);
+    ctx.save();
+    ctx.font = `500 11px ${FONT}`;
+    ctx.fillStyle = COLORS.midPanel;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('POWERED BY SIEMENS TECHNOLOGY', GAME_WIDTH / 2, GAME_HEIGHT - 34);
+    ctx.restore();
   }
 
   /* ---- Helpers ---- */
@@ -147,12 +345,19 @@ export class UI {
         const ratio = img.naturalWidth / img.naturalHeight;
         const h = width / ratio;
         const x = centerX - width / 2;
+        ctx.save();
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
         this._sprites.drawImage(ctx, 'robotFullFront', x, y, width, h);
+        ctx.restore();
         return;
       }
     }
     const h = width * 1.1;
+    ctx.save();
+    this.drawRoundedRect(ctx, centerX - width / 2, y, width, h, 12);
     ctx.fillStyle = COLORS.petrol;
-    ctx.fillRect(centerX - width / 2, y, width, h);
+    ctx.fill();
+    ctx.restore();
   }
 }

@@ -9,10 +9,6 @@ export class Engine {
     this.canvas = document.getElementById(canvasId);
     this.ctx = this.canvas.getContext('2d');
 
-    this.canvas.width = GAME_WIDTH;
-    this.canvas.height = GAME_HEIGHT;
-    this.ctx.imageSmoothingEnabled = true;
-
     this._lastTime = 0;
     this._accumulator = 0;
     this._running = false;
@@ -21,12 +17,27 @@ export class Engine {
     this.updateFn = null;
     this.renderFn = null;
 
-    this._resizeCanvas();
-    window.addEventListener('resize', () => this._resizeCanvas());
+    this._setupCanvas();
+    window.addEventListener('resize', () => this._setupCanvas());
   }
 
-  _resizeCanvas() {
+  _setupCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+
+    // Set the backing store to the full physical resolution
+    this.canvas.width = GAME_WIDTH * dpr;
+    this.canvas.height = GAME_HEIGHT * dpr;
+
+    // Set CSS size to exactly the logical game size — the responsive
+    // CSS rules (max-width / max-height / aspect-ratio) will still
+    // constrain this, so it won't overflow.
+    this.canvas.style.width = GAME_WIDTH + 'px';
+    this.canvas.style.height = GAME_HEIGHT + 'px';
+
+    // Scale the context so all drawing code uses logical coordinates
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.ctx.imageSmoothingEnabled = true;
+    this.ctx.imageSmoothingQuality = 'high';
   }
 
   start(updateFn, renderFn) {

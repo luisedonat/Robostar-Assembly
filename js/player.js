@@ -92,8 +92,22 @@ export class Player {
       return;
     }
 
+    ctx.save();
+    ctx.beginPath();
+    const r = 8;
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + this.width - r, y);
+    ctx.quadraticCurveTo(x + this.width, y, x + this.width, y + r);
+    ctx.lineTo(x + this.width, y + this.height - r);
+    ctx.quadraticCurveTo(x + this.width, y + this.height, x + this.width - r, y + this.height);
+    ctx.lineTo(x + r, y + this.height);
+    ctx.quadraticCurveTo(x, y + this.height, x, y + this.height - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
     ctx.fillStyle = COLORS.petrol;
-    ctx.fillRect(x, y, this.width, this.height);
+    ctx.fill();
+    ctx.restore();
   }
 
   get centerX() { return this.x + this.width / 2; }

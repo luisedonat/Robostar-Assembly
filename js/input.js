@@ -1,5 +1,9 @@
 const SWIPE_THRESHOLD = 30;
 
+// Logical game dimensions (must match engine.js)
+const GAME_W = 390;
+const GAME_H = 844;
+
 export class Input {
   constructor(canvas) {
     this.canvas = canvas;
@@ -66,11 +70,10 @@ export class Input {
 
   _canvasCoords(clientX, clientY) {
     const rect = this.canvas.getBoundingClientRect();
-    const scaleX = this.canvas.width / rect.width;
-    const scaleY = this.canvas.height / rect.height;
+    // Map from CSS client coords directly to game-logical coords
     return {
-      x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top) * scaleY,
+      x: (clientX - rect.left) * (GAME_W / rect.width),
+      y: (clientY - rect.top) * (GAME_H / rect.height),
     };
   }
 
@@ -100,7 +103,7 @@ export class Input {
       this._dragY = pos.y;
       this._dragEnded = false;
 
-      const half = this.canvas.width / 2;
+      const half = GAME_W / 2;
       this.keys.left = pos.x < half;
       this.keys.right = pos.x >= half;
     }, { passive: false });
