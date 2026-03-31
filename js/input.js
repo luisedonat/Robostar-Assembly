@@ -1,6 +1,6 @@
 const SWIPE_THRESHOLD = 30;
-const TILT_DEADZONE = 5;    // degrees of tilt before registering movement
-const TILT_MAX = 30;         // degrees at which tilt reaches full speed
+const TILT_DEADZONE = 3;    // degrees of tilt before registering movement
+const TILT_MAX = 18;        // degrees at which tilt reaches full speed
 
 // Logical game dimensions (must match engine.js)
 const GAME_W = 390;
