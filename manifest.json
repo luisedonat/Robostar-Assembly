@@ -1,0 +1,11 @@
+{
+  "name": "Robostar Assembly",
+  "short_name": "Robostar",
+  "description": "Assemble the Robostar — a Siemens factory puzzle game",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#000028",
+  "theme_color": "#000028",
+  "icons": []
+}

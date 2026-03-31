@@ -45,9 +45,51 @@ export class Input {
     this._tiltAvailable = false; // true once we receive a deviceorientation event
     this._tiltPermission = false;// true once permission granted (iOS)
 
+    this._lockScrolling();
     this._bindKeyboard();
     this._bindPointer();
     this._bindTilt();
+  }
+
+  /** Prevent ALL scrolling / bounce / pull-to-refresh at the document level */
+  _lockScrolling() {
+    const opts = { passive: false };
+
+    // Block touchmove on the entire document (prevents pull-to-refresh, rubber-band)
+    document.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+    }, opts);
+
+    // Block Safari pinch-zoom gesture
+    document.addEventListener('gesturestart', (e) => {
+      e.preventDefault();
+    }, opts);
+    document.addEventListener('gesturechange', (e) => {
+      e.preventDefault();
+    }, opts);
+    document.addEventListener('gestureend', (e) => {
+      e.preventDefault();
+    }, opts);
+
+    // Extra: prevent wheel-zoom on desktop when Ctrl is held
+    document.addEventListener('wheel', (e) => {
+      if (e.ctrlKey) e.preventDefault();
+    }, opts);
+  }
+
+  /**
+   * Request the Fullscreen API (hides browser chrome on Android).
+   * Must be called from a user-gesture handler.
+   */
+  requestFullscreen() {
+    const el = document.documentElement;
+    const rfs = el.requestFullscreen
+      || el.webkitRequestFullscreen
+      || el.mozRequestFullScreen
+      || el.msRequestFullscreen;
+    if (rfs) {
+      try { rfs.call(el); } catch (_) { /* ignore */ }
+    }
   }
 
   _bindKeyboard() {

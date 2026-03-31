@@ -61,6 +61,7 @@ export class MenuState {
       unlockAudio();
       startBGM();
       this.input.requestTiltPermission();   // request gyroscope access (iOS)
+      this.input.requestFullscreen();        // hide browser chrome (Android)
       this.progress.reset();
       const nextIdx = 0;
       this.sm.change('playing', { levelIndex: nextIdx });
