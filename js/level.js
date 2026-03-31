@@ -596,7 +596,7 @@ class DoodleJumpLevel {
       this._playerVX = 0;
     } else if (input.tiltAvailable && Math.abs(input.tiltX) > 0.05) {
       // Tilt uses a higher speed so full tilt crosses the whole screen quickly
-      this._playerVX = input.tiltX * this._moveSpeed * 3;
+      this._playerVX = input.tiltX * this._moveSpeed * 2;
     } else if (input.keys.left) {
       this._playerVX = -this._moveSpeed;
     } else if (input.keys.right) {
