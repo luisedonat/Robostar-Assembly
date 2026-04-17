@@ -12,6 +12,7 @@ export class UI {
     this._blink = 0;
     this._sprites = sprites || null;
     this._animTime = 0; // animation timer for end screen robot
+    this._linkBtnRect = null; // hit area for mobile feedback link
   }
 
   update(dt) {
@@ -128,7 +129,7 @@ export class UI {
       // Label underneath — lighter teal, bigger font
       ctx.save();
       ctx.font = `500 10px ${FONT}`;
-      ctx.fillStyle = active ? '#00BEDC' : '#9999A9';
+      ctx.fillStyle = active ? '#00E6DC' : '#9999A9';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       ctx.fillText(labelList[i], cx, stepY + stepRadius + 6);
@@ -148,7 +149,7 @@ export class UI {
     // Level name — left
     ctx.save();
     ctx.font = `500 10px ${FONT}`;
-    ctx.fillStyle = '#00BEDC';
+    ctx.fillStyle = '#00E6DC';
     ctx.textBaseline = 'top';
     ctx.textAlign = 'left';
     ctx.fillText(levelName, 14, 78);
@@ -167,6 +168,17 @@ export class UI {
 
   /** HUD tap handler — no mute buttons, so always return false (not consumed) */
   handleHUDTap(x, y) { return false; }
+
+  /** Check if a tap hit the mobile feedback link button. Returns true if consumed. */
+  handleLinkTap(x, y) {
+    const r = this._linkBtnRect;
+    if (!r) return false;
+    if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) {
+      window.open('https://example.com/robostar-feedback', '_blank');
+      return true;
+    }
+    return false;
+  }
 
   _drawMuteBtn(ctx, x, y, isOn, type) {
     ctx.save();
@@ -377,18 +389,58 @@ export class UI {
   ctx.fillText('Scan the QR code and help us evolve it.', GAME_WIDTH / 2, 358);
   ctx.restore();
 
-    // Placeholder QR code
-    const qrSize = 100;
-    const qrX = (GAME_WIDTH - qrSize) / 2;
+    // QR code (desktop) or tappable link (mobile)
+    const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
     const qrY = 380;
-    this._drawPlaceholderQR(ctx, qrX, qrY, qrSize);
+
+    if (isMobile) {
+      // Tappable link button
+      const btnW = 260;
+      const btnH = 44;
+      const btnX = (GAME_WIDTH - btnW) / 2;
+      const btnY = qrY + 10;
+
+      // Store hit area for tap detection
+      this._linkBtnRect = { x: btnX, y: btnY, w: btnW, h: btnH };
+
+      // Button background
+      ctx.save();
+      this.drawRoundedRect(ctx, btnX, btnY, btnW, btnH, 10);
+      ctx.fillStyle = '#00E6DC';
+      ctx.fill();
+      ctx.restore();
+
+      // Button text
+      ctx.save();
+      ctx.font = `600 14px ${FONT}`;
+      ctx.fillStyle = '#000028';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Open feedback link →', GAME_WIDTH / 2, btnY + btnH / 2);
+      ctx.restore();
+
+      // Subtitle
+      ctx.save();
+      ctx.font = `400 10px ${FONT}`;
+      ctx.fillStyle = '#9999A9';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText('https://example.com/robostar-feedback', GAME_WIDTH / 2, btnY + btnH + 8);
+      ctx.restore();
+    } else {
+      // QR code for desktop
+      const qrSize = 100;
+      const qrX = (GAME_WIDTH - qrSize) / 2;
+      this._drawPlaceholderQR(ctx, qrX, qrY, qrSize);
+      this._linkBtnRect = null;
+    }
 
     // Total time card
     this.drawBox(ctx, 40, 500, GAME_WIDTH - 80, 70, COLORS.darkPanel + 'CC', COLORS.teal + '60', 10);
 
     ctx.save();
     ctx.font = `500 12px ${FONT}`;
-    ctx.fillStyle = COLORS.midPanel;
+    ctx.fillStyle = '#E5E5E9';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillText('Total time', GAME_WIDTH / 2, 513);
@@ -428,7 +480,7 @@ export class UI {
 
       ctx.save();
       ctx.font = `500 13px ${FONT}`;
-      ctx.fillStyle = '#00BEDC';
+      ctx.fillStyle = '#00E6DC';
       ctx.textBaseline = 'top';
       ctx.textAlign = 'left';
       ctx.fillText(labels[i], 60, rowY);

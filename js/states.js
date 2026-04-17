@@ -201,6 +201,8 @@ export class GameCompleteState {
     }
     if (this.input.consumeTap() || this.input.keys.action) {
   this.input.keys.action = false;
+  // Check if tap hit the mobile feedback link
+  if (this.ui.handleLinkTap(this.input.tapX, this.input.tapY)) return;
   this.progress.reset();
   this.sm.change('menu');
     }

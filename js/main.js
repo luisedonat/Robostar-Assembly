@@ -49,27 +49,9 @@ async function boot() {
   sm.register('gameComplete', new GameCompleteState(sm, ui, input, progress));
   setLoadProgress(90);
 
-  sm.change('menu');
+  sm.change('gameComplete'); // TEMP: skip to end screen
   setLoadProgress(100);
 
-  // Hold loading screen for ~4 seconds so the credit text is readable
-  // Animate the bar smoothly across the wait
-  const loadStart = performance.now();
-  const LOAD_DURATION = 4000;
-  await new Promise(resolve => {
-    function tick() {
-      const elapsed = performance.now() - loadStart;
-      if (elapsed >= LOAD_DURATION) {
-        setLoadProgress(100);
-        resolve();
-        return;
-      }
-      // Bar goes from 90→100 during the cosmetic wait
-      setLoadProgress(90 + (elapsed / LOAD_DURATION) * 10);
-      requestAnimationFrame(tick);
-    }
-    tick();
-  });
   if (loadingScreen) loadingScreen.classList.add('hidden');
 
   engine.start(
