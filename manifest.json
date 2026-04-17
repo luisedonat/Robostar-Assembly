@@ -1,7 +1,7 @@
 {
   "name": "Robostar Assembly",
-  "short_name": "Robostar",
-  "description": "Assemble the Robostar — a Siemens factory puzzle game",
+  "short_name": "Robot Assembly",
+  "description": "Assemble the Robot — a Siemens puzzle game",
   "start_url": "./index.html",
   "display": "fullscreen",
   "orientation": "portrait",

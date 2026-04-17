@@ -17,7 +17,7 @@
   --color-deep-blue-800: #23233C;
   --color-deep-blue-700: #40405E;
   --color-sand-200: #F5F5F5;
-  --font-sans: 'Inter', 'Siemens Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Siemens Sans Pro Roman', 'Siemens Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
   --radius-sm: 4px;
   --radius-md: 8px;
@@ -119,16 +119,20 @@ html, body {
 
 .loading-title {
   font-family: var(--font-sans);
-  font-size: 2.4rem;
+  font-size: clamp(1.8rem, 6vw, 3rem);
   font-weight: 800;
   letter-spacing: 0.25em;
-  color: var(--color-petrol);
-  text-shadow: 0 0 24px rgba(0, 153, 153, 0.3);
+  /* Bold Dynamic Petrol gradient */
+  background: linear-gradient(90deg, #00E6DC, #00FFB9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
 }
 
 .loading-subtitle {
   font-family: var(--font-sans);
-  font-size: 1.1rem;
+  font-size: clamp(0.85rem, 2.8vw, 1.3rem);
   font-weight: 600;
   letter-spacing: 0.45em;
   color: var(--color-yellow);
@@ -136,7 +140,7 @@ html, body {
 }
 
 .loading-bar-track {
-  width: 200px;
+  width: clamp(160px, 50vw, 280px);
   height: 4px;
   background: var(--color-dark-panel);
   border: none;
@@ -155,9 +159,20 @@ html, body {
 
 .loading-text {
   font-family: var(--font-sans);
-  font-size: 0.7rem;
+  font-size: clamp(0.75rem, 2.2vw, 1rem);
   font-weight: 500;
   letter-spacing: 0.15em;
-  color: var(--color-mid-panel);
+  color: #E5E5E9;
   margin-top: 1rem;
+}
+
+.loading-credit {
+  font-family: var(--font-sans);
+  font-size: clamp(0.7rem, 2vw, 0.95rem);
+  font-weight: 500;
+  color: #E5E5E9;
+  margin-top: 2rem;
+  text-align: center;
+  max-width: 320px;
+  line-height: 1.5;
 }

@@ -5,7 +5,7 @@ import { playPartSnap, playJump, playCodeSlot, playBreak, playError } from './au
 const COLS = Math.floor(GAME_WIDTH / TILE_SIZE);
 const ROWS = Math.floor(GAME_HEIGHT / TILE_SIZE);
 
-const FONT = "'Inter', 'Siemens Sans', 'Segoe UI', system-ui, -apple-system, sans-serif";
+const FONT = "'Siemens Sans Pro Roman', 'Siemens Sans', 'Segoe UI', system-ui, -apple-system, sans-serif";
 const MONO = "'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace";
 
 function roundRect(ctx, x, y, w, h, r = 6) {
@@ -191,10 +191,9 @@ class BlueprintPuzzleLevel {
     ctx.fillStyle = COLORS.petrol;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    ctx.fillText('VIRTUAL WORKBENCH', GAME_WIDTH / 2, GAME_HEIGHT * 0.08 + 16);
+    ctx.fillText('Virtual Workbench', GAME_WIDTH / 2, GAME_HEIGHT * 0.08 + 16);
     ctx.font = `500 11px ${FONT}`;
     ctx.fillStyle = COLORS.midPanel;
-    ctx.fillText('NX / Simcenter / Teamcenter', GAME_WIDTH / 2, GAME_HEIGHT * 0.08 + 34);
     ctx.restore();
 
     for (const p of this._parts) {
@@ -718,7 +717,7 @@ class DoodleJumpLevel {
       ctx.fillStyle = COLORS.yellow;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
-      ctx.fillText('FINISH', GAME_WIDTH / 2, finishScreenY - 6);
+      ctx.fillText('Finish', GAME_WIDTH / 2, finishScreenY - 6);
       ctx.restore();
     }
 
@@ -761,7 +760,7 @@ class DoodleJumpLevel {
     ctx.fillStyle = COLORS.midPanel;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
-    ctx.fillText('SINUMERIK / Opcenter', GAME_WIDTH / 2, GAME_HEIGHT - 8);
+    ctx.fillText('Sinumerik / Opcenter', GAME_WIDTH / 2, GAME_HEIGHT - 8);
     ctx.restore();
 
     if (this._dead) {
@@ -781,7 +780,7 @@ class DoodleJumpLevel {
       ctx.fillStyle = COLORS.red;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('FELL DOWN!', GAME_WIDTH / 2, GAME_HEIGHT / 2 - 16);
+      ctx.fillText('Fell down!', GAME_WIDTH / 2, GAME_HEIGHT / 2 - 16);
       ctx.font = `500 15px ${FONT}`;
       ctx.fillStyle = COLORS.coral;
       ctx.fillText('Tap to retry', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 24);
@@ -798,32 +797,37 @@ class DoodleJumpLevel {
    ================================================================ */
 
 const CODE_BLOCKS = [
-  { label: 'robot.init()',      keyword: 'await',  color: '#C586C0', hint: 'initialize the robot' },
-  { label: 'sensor.scan()',     keyword: 'await',  color: '#C586C0', hint: 'scan the environment' },
-  { label: 'target.detect()',   keyword: 'const',  color: '#569CD6', hint: 'identify the target' },
-  { label: 'arm.grab(target)',  keyword: 'await',  color: '#C586C0', hint: 'pick up the target' },
-  { label: 'arm.move(dest)',    keyword: 'await',  color: '#C586C0', hint: 'move to destination' },
-  { label: 'robot.deploy()',    keyword: 'return', color: '#C586C0', hint: 'deploy & finish' },
+  { label: 'robot.init()',        keyword: 'await',  color: '#E5659B', hint: 'initialize the robot' },
+  { label: 'sensor.scan()',       keyword: 'await',  color: '#E5659B', hint: 'scan the environment' },
+  { label: 'target = detect()',   keyword: 'const',  color: '#6895F6', hint: 'identify the target' },
+  { label: 'arm.grab(target)',    keyword: 'await',  color: '#E5659B', hint: 'pick up the target' },
+  { label: 'arm.place(target)',   keyword: 'await',  color: '#E5659B', hint: 'place at destination' },
+  { label: 'robot.complete()',    keyword: 'return', color: '#E5659B', hint: 'signal task complete' },
 ];
 
 const BLOCK_W = 220;
-const BLOCK_H = 34;
-const SLOT_GAP = 4;
+const BLOCK_H = 26;
+const SLOT_GAP = 3;
 
-// IDE color palette (VS Code dark theme inspired, using Siemens IX accents)
+// IDE color palette
 const IDE = {
-  editorBg:    '#1E1E3A',    // slightly navy-tinted
-  gutterBg:    '#191932',
+  editorBg:    '#000028',
+  gutterBg:    '#000020',
   lineNum:     '#5A5A7A',
   tabBg:       '#2D2D4A',
-  tabActive:   '#1E1E3A',
+  tabActive:   '#000028',
   tabBorder:   '#009999',   // petrol accent
-  keyword:     '#C586C0',
-  func:        '#DCDCAA',
+  keyword:     '#6895F6',   // keywords
+  special:     '#E5659B',   // special keywords & operators (await, return, async)
+  func:        '#FFE784',   // functions
+  variable:    '#CCF2F8',   // variables
   string:      '#CE9178',
-  comment:     '#6A9955',
-  bracket:     '#FFD700',
-  text:        '#D4D4D4',
+  comment:     '#7D8099',   // comments
+  constant:    '#4DD1E7',   // constants and enums
+  bracket:     '#9999A9',   // brackets
+  typeRef:     '#85E9D2',   // type declarations & references
+  invalid:     '#FF2640',
+  text:        '#E5E5E9',   // default
   selection:   '#264F78',
   cursor:      '#AEAFAD',
 };
@@ -842,6 +846,7 @@ class CodePuzzleLevel {
     this._dragOffX = 0;
     this._dragOffY = 0;
     this._cursorBlink = 0;
+    this._trayTop = 0;
   }
 
   init(_progress) {
@@ -855,7 +860,7 @@ class CodePuzzleLevel {
     const editorLeft = 52;  // after gutter
     const editorRight = GAME_WIDTH - 16;
     const slotW = editorRight - editorLeft - 8;
-    const slotStartY = 178;  // after header/tabs/function line
+    const slotStartY = 158;  // after header/tabs/function line (compact)
 
     this._slots = CODE_BLOCKS.map((def, i) => ({
       label: def.label,
@@ -876,17 +881,28 @@ class CodePuzzleLevel {
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
 
-    const trayStartY = GAME_HEIGHT * 0.56;
-    const trayLeft = 20;
-    const trayW = GAME_WIDTH - 40;
+    // Tray is positioned dynamically in render() based on status bar position
+    // We compute it here based on the same editor metrics
+    const editorTop = 56;
+    const editorH = GAME_HEIGHT * 0.38;
+    const codeTop = editorTop + 28;
+    const statusBarBottom = codeTop + editorH + 22; // status bar = 22px
+    const instructionH = 50; // instruction text area
+    const trayTop = statusBarBottom + instructionH;
+    const trayLeft = 16;
+    const trayW = GAME_WIDTH - 32;
+    const trayPad = 8;
+    // Two columns so snippets are compact
     const cols = 2;
-    const cellW = (trayW - SLOT_GAP) / cols;
+    const cellW = (trayW - trayPad * 2 - SLOT_GAP) / cols;
+
+    this._trayTop = trayTop; // store for render
 
     this._blocks = shuffled.map((def, i) => {
       const col = i % cols;
       const row = Math.floor(i / cols);
-      const bx = trayLeft + col * (cellW + SLOT_GAP);
-      const by = trayStartY + row * (BLOCK_H + SLOT_GAP + 4);
+      const bx = trayLeft + trayPad + col * (cellW + SLOT_GAP);
+      const by = trayTop + trayPad + row * (BLOCK_H + SLOT_GAP + 2);
       return {
         label: def.label,
         keyword: def.keyword,
@@ -1003,7 +1019,7 @@ class CodePuzzleLevel {
     const editorTop = 56;
     const editorLeft = 0;
     const editorW = GAME_WIDTH;
-    const editorH = GAME_HEIGHT * 0.5;
+    const editorH = GAME_HEIGHT * 0.38;
     const gutterW = 48;
 
     // ── Editor tab bar ──
@@ -1023,9 +1039,6 @@ class CodePuzzleLevel {
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     ctx.fillText('robostar_ai.ts', editorLeft + 14, editorTop + 15);
-    // Second tab (inactive)
-    ctx.fillStyle = IDE.lineNum;
-    ctx.fillText('config.json', editorLeft + 145, editorTop + 15);
     ctx.restore();
 
     const codeTop = editorTop + 28;
@@ -1053,25 +1066,25 @@ class CodePuzzleLevel {
     // Line 1: comment
     this._drawGutterLine(ctx, editorLeft, lineY, gutterW, 1);
     ctx.save();
-    ctx.font = `400 12px ${MONO}`;
+    ctx.font = `400 10px ${MONO}`;
     ctx.fillStyle = IDE.comment;
     ctx.textBaseline = 'top';
     ctx.textAlign = 'left';
     ctx.fillText('// Robostar AI sequence', editorLeft + gutterW + 10, lineY + 2);
     ctx.restore();
-    lineY += 20;
+    lineY += 18;
 
     // Line 2: async function header
     this._drawGutterLine(ctx, editorLeft, lineY, gutterW, 2);
     ctx.save();
-    ctx.font = `400 12px ${MONO}`;
+    ctx.font = `400 10px ${MONO}`;
     ctx.textBaseline = 'top';
     ctx.textAlign = 'left';
     // "async" keyword
-    ctx.fillStyle = IDE.keyword;
+    ctx.fillStyle = IDE.special;
     ctx.fillText('async', editorLeft + gutterW + 10, lineY + 2);
     // "function" keyword
-    ctx.fillStyle = '#569CD6';
+    ctx.fillStyle = IDE.keyword;
     ctx.fillText('function', editorLeft + gutterW + 52, lineY + 2);
     // function name
     ctx.fillStyle = IDE.func;
@@ -1112,8 +1125,7 @@ class CodePuzzleLevel {
         ctx.setLineDash([]);
 
         // Placeholder text — hint for what this step does
-        ctx.font = `400 11px ${MONO}`;
-        ctx.fillStyle = IDE.lineNum + '90';
+        ctx.font = `400 9px ${MONO}`;        ctx.fillStyle = IDE.comment;
         ctx.textBaseline = 'middle';
         ctx.textAlign = 'left';
         ctx.fillText(`  // ${s.hint}`, s.x + 6, s.y + BLOCK_H / 2);
@@ -1126,7 +1138,7 @@ class CodePuzzleLevel {
     const closingY = lastSlot.y + BLOCK_H + 8;
     this._drawGutterLine(ctx, editorLeft, closingY, gutterW, slotStartLine + this._slots.length);
     ctx.save();
-    ctx.font = `400 12px ${MONO}`;
+    ctx.font = `400 10px ${MONO}`;
     ctx.fillStyle = IDE.bracket;
     ctx.textBaseline = 'top';
     ctx.textAlign = 'left';
@@ -1174,10 +1186,35 @@ class CodePuzzleLevel {
     ctx.fillStyle = COLORS.yellow;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    ctx.fillText('Drag code blocks into the editor', GAME_WIDTH / 2, statusY + 32);
-    ctx.font = `500 11px ${FONT}`;
+    ctx.fillText('Drag code blocks into the editor', GAME_WIDTH / 2, statusY + 28);
+    ctx.font = `500 10px ${FONT}`;
     ctx.fillStyle = COLORS.midPanel;
-    ctx.fillText('Industrial Edge / Xcelerator', GAME_WIDTH / 2, statusY + 50);
+    ctx.restore();
+
+    // ── Tray box — designated area for unplaced code blocks ──
+    const trayBoxLeft = 16;
+    const trayBoxTop = this._trayTop - 4;
+    const trayBoxW = GAME_WIDTH - 32;
+    const numBlocks = this._blocks.length;
+    const trayRows = Math.ceil(numBlocks / 2);
+    const trayBoxH = 10 + trayRows * (BLOCK_H + SLOT_GAP + 2) + 10;
+
+    ctx.save();
+    roundRect(ctx, trayBoxLeft, trayBoxTop, trayBoxW, trayBoxH, 8);
+    ctx.fillStyle = COLORS.darkPanel + 'B0';
+    ctx.fill();
+    ctx.strokeStyle = COLORS.teal + '60';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
+
+    // Tray label
+    ctx.save();
+    ctx.font = `500 10px ${FONT}`;
+    ctx.fillStyle = IDE.comment;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('Code snippets', trayBoxLeft + 10, trayBoxTop - 14);
     ctx.restore();
 
     // ── Tray area: code blocks to drag ──
@@ -1200,7 +1237,7 @@ class CodePuzzleLevel {
 
   _drawGutterLine(ctx, editorLeft, y, gutterW, lineNum) {
     ctx.save();
-    ctx.font = `400 11px ${MONO}`;
+    ctx.font = `400 9px ${MONO}`;
     ctx.fillStyle = IDE.lineNum;
     ctx.textBaseline = 'top';
     ctx.textAlign = 'right';
@@ -1227,8 +1264,8 @@ class CodePuzzleLevel {
     }
     ctx.fill();
 
-    // Border
-    ctx.strokeStyle = isDragged ? COLORS.focusBlue : IDE.lineNum + '40';
+    // Border — white outline for visibility
+    ctx.strokeStyle = isDragged ? COLORS.focusBlue : '#FFFFFF';
     ctx.lineWidth = isDragged ? 1.5 : 1;
     ctx.stroke();
 
@@ -1236,11 +1273,11 @@ class CodePuzzleLevel {
 
     // Syntax-highlighted code text
     ctx.save();
-    ctx.font = `400 12px ${MONO}`;
+    ctx.font = `400 10px ${MONO}`;
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     const textY = y + BLOCK_H / 2;
-    let textX = x + 10;
+    let textX = x + 8;
 
     // Keyword
     ctx.fillStyle = b.color || IDE.keyword;
@@ -1252,7 +1289,7 @@ class CodePuzzleLevel {
     // Object.method part
     const dotParts = parts[0].split('.');
     if (dotParts.length === 2) {
-      ctx.fillStyle = IDE.text;
+      ctx.fillStyle = IDE.variable;
       ctx.fillText(dotParts[0] + '.', textX, textY);
       textX += ctx.measureText(dotParts[0] + '.').width;
       ctx.fillStyle = IDE.func;
@@ -1271,7 +1308,7 @@ class CodePuzzleLevel {
       textX += ctx.measureText('(').width;
       const inner = parts[1].replace(')', '');
       if (inner) {
-        ctx.fillStyle = inner.startsWith("'") ? IDE.string : IDE.text;
+        ctx.fillStyle = inner.startsWith("'") ? IDE.string : IDE.variable;
         ctx.fillText(inner, textX, textY);
         textX += ctx.measureText(inner).width;
       }

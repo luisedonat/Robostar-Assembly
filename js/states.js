@@ -1,6 +1,6 @@
 import { createLevel } from './level.js';
 import { PARTS } from './progress.js';
-import { playLevelComplete, playVictory, unlockAudio, startBGM, stopBGM } from './audio.js';
+import { playLevelComplete, playVictory, unlockAudio } from './audio.js';
 
 export class StateMachine {
   constructor() {
@@ -57,14 +57,12 @@ export class MenuState {
   update(dt) {
     this.ui.update(dt);
     if (this.input.consumeTap() || this.input.keys.action) {
-      this.input.keys.action = false;
-      unlockAudio();
-      startBGM();
-      this.input.requestTiltPermission();   // request gyroscope access (iOS)
-      this.input.requestFullscreen();        // hide browser chrome (Android)
+  this.input.keys.action = false;
+  unlockAudio();
+  this.input.requestTiltPermission();   // request gyroscope access (iOS)
+  this.input.requestFullscreen();        // hide browser chrome (Android)
       this.progress.reset();
-      const nextIdx = 0;
-      this.sm.change('playing', { levelIndex: nextIdx });
+      this.sm.change('playing', { levelIndex: 0 });
     }
   }
 
@@ -190,7 +188,6 @@ export class GameCompleteState {
     this._inputDelay = 0.8;
     this.input.consumeTap();
     this.input.consumeDragEnd();
-    stopBGM();
   }
 
   exit() {}
@@ -203,10 +200,9 @@ export class GameCompleteState {
       return;
     }
     if (this.input.consumeTap() || this.input.keys.action) {
-      this.input.keys.action = false;
-      this.progress.reset();
-      startBGM();
-      this.sm.change('menu');
+  this.input.keys.action = false;
+  this.progress.reset();
+  this.sm.change('menu');
     }
   }
 
