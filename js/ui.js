@@ -171,13 +171,7 @@ export class UI {
 
   /** Check if a tap hit the mobile feedback link button. Returns true if consumed. */
   handleLinkTap(x, y) {
-    const r = this._linkBtnRect;
-    if (!r) return false;
-    if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) {
-      window.open('https://example.com/robostar-feedback', '_blank');
-      return true;
-    }
-    return false;
+    return false; // disabled for now
   }
 
   _drawMuteBtn(ctx, x, y, isOn, type) {
@@ -425,7 +419,7 @@ export class UI {
       ctx.fillStyle = '#9999A9';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.fillText('https://example.com/robostar-feedback', GAME_WIDTH / 2, btnY + btnH + 8);
+      ctx.fillText('example link', GAME_WIDTH / 2, btnY + btnH + 8);
       ctx.restore();
     } else {
       // QR code for desktop
