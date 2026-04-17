@@ -360,32 +360,32 @@ export class UI {
     ctx.fillStyle = COLORS.navy;
     ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
+    this._drawAnimatedRobot(ctx, GAME_WIDTH / 2, 72, 120);
+
   ctx.save();
   ctx.font = `800 28px ${FONT}`;
   // Bold Dynamic Petrol gradient on game-complete title
-  const gcGrad = ctx.createLinearGradient(GAME_WIDTH / 2 - 140, 72, GAME_WIDTH / 2 + 140, 72);
+  const gcGrad = ctx.createLinearGradient(GAME_WIDTH / 2 - 140, 280, GAME_WIDTH / 2 + 140, 280);
   gcGrad.addColorStop(0, '#00E6DC');
   gcGrad.addColorStop(1, '#00FFB9');
   ctx.fillStyle = gcGrad;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  ctx.fillText('Your ideas. Our next level.', GAME_WIDTH / 2, 72);
+  ctx.fillText('Your ideas. Our next level.', GAME_WIDTH / 2, 280);
   ctx.restore();
-
-    this._drawAnimatedRobot(ctx, GAME_WIDTH / 2, 160, 120);
 
   ctx.save();
   ctx.font = `600 14px ${FONT}`;
   ctx.fillStyle = '#E5E5E9';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  ctx.fillText('Think this game can do more?', GAME_WIDTH / 2, 338);
-  ctx.fillText('Scan the QR code and help us evolve it.', GAME_WIDTH / 2, 358);
+  ctx.fillText('Think this game can do more?', GAME_WIDTH / 2, 320);
+  ctx.fillText('Scan the QR code and help us evolve it.', GAME_WIDTH / 2, 340);
   ctx.restore();
 
     // QR code (desktop) or tappable link (mobile)
     const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-    const qrY = 380;
+    const qrY = 365;
 
     if (isMobile) {
       // Tappable link button
