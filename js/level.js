@@ -807,10 +807,10 @@ class DoodleJumpLevel {
 
 const CODE_BLOCKS = [
   { label: 'robot.init()',        keyword: 'await',  color: '#E5659B', hint: 'initialize the robot' },
-  { label: 'sensor.scan()',       keyword: 'await',  color: '#E5659B', hint: 'scan the environment' },
+  { label: 'head.scan()',         keyword: 'await',  color: '#E5659B', hint: 'move head to scan' },
   { label: 'target = detect()',   keyword: 'const',  color: '#6895F6', hint: 'identify the target' },
-  { label: 'arm.grab(target)',    keyword: 'await',  color: '#E5659B', hint: 'pick up the target' },
-  { label: 'arm.place(target)',   keyword: 'await',  color: '#E5659B', hint: 'place at destination' },
+  { label: 'arm.right(target)',   keyword: 'await',  color: '#E5659B', hint: 'move right arm' },
+  { label: 'arm.left(target)',    keyword: 'await',  color: '#E5659B', hint: 'move left arm' },
   { label: 'robot.complete()',    keyword: 'return', color: '#E5659B', hint: 'signal task complete' },
 ];
 
@@ -869,7 +869,7 @@ class CodePuzzleLevel {
     const editorLeft = 52;  // after gutter
     const editorRight = GAME_WIDTH - 16;
     const slotW = editorRight - editorLeft - 8;
-    const slotStartY = 198;  // after header/tabs/function line (compact)
+    const slotStartY = 170;  // after header/tabs/function line (compact)
 
     this._slots = CODE_BLOCKS.map((def, i) => ({
       label: def.label,
@@ -1102,7 +1102,7 @@ class CodePuzzleLevel {
     ctx.fillStyle = IDE.bracket;
     ctx.fillText('() {', editorLeft + gutterW + 160, lineY + 2);
     ctx.restore();
-    lineY += 24;
+    lineY += 18;
 
     // ── Slot area (the drop zones inside the editor) ──
     const slotStartLine = 3;

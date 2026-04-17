@@ -11,10 +11,12 @@ export class UI {
   constructor(sprites) {
     this._blink = 0;
     this._sprites = sprites || null;
+    this._animTime = 0; // animation timer for end screen robot
   }
 
   update(dt) {
     this._blink += dt;
+    this._animTime += dt;
   }
 
   drawText(ctx, text, x, y, size = 16, color = COLORS.white, align = 'left', font = FONT) {
@@ -364,11 +366,11 @@ export class UI {
   ctx.fillText('Your ideas. Our next level.', GAME_WIDTH / 2, 72);
   ctx.restore();
 
-    this._drawRobostarImage(ctx, GAME_WIDTH / 2, 160, 140);
+    this._drawAnimatedRobot(ctx, GAME_WIDTH / 2, 160, 120);
 
   ctx.save();
   ctx.font = `600 14px ${FONT}`;
-  ctx.fillStyle = COLORS.petrol;
+  ctx.fillStyle = '#E5E5E9';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   ctx.fillText('Think this game can do more?', GAME_WIDTH / 2, 338);
@@ -403,7 +405,7 @@ export class UI {
     // Best times section
     ctx.save();
     ctx.font = `600 13px ${FONT}`;
-    ctx.fillStyle = COLORS.teal;
+    ctx.fillStyle = '#00D7A0';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillText('Best times', GAME_WIDTH / 2, 590);
@@ -426,7 +428,7 @@ export class UI {
 
       ctx.save();
       ctx.font = `500 13px ${FONT}`;
-      ctx.fillStyle = COLORS.lightPetrol;
+      ctx.fillStyle = '#00BEDC';
       ctx.textBaseline = 'top';
       ctx.textAlign = 'left';
       ctx.fillText(labels[i], 60, rowY);
@@ -491,6 +493,138 @@ export class UI {
     ctx.fillStyle = COLORS.petrol;
     ctx.fill();
     ctx.restore();
+  }
+
+  /**
+   * Animated robot on the end screen — uses separated parts to replay
+   * the assembly sequence from the code puzzle:
+   * Phase 0: robot.init()     — parts slide in from off-screen and assemble
+   * Phase 1: sensor.scan()    — head tilts left/right scanning
+   * Phase 2: arm.grab(target) — right arm reaches out
+   * Phase 3: arm.place(target)— right arm returns, left arm waves
+   * Phase 4: robot.complete() — celebratory bounce + glow
+   * Then loops.
+   */
+  _drawAnimatedRobot(ctx, centerX, topY, scale) {
+    if (!this._sprites) return;
+
+    const t = this._animTime;
+    const cycleDuration = 6; // seconds per full cycle
+    const phase = (t % cycleDuration) / cycleDuration; // 0..1
+
+    // Use the same scale as level 1 assembly (PART_SCALE=0.42), halved
+    const PS = 0.42 * 0.5;
+
+    // Part definitions — exact same as PART_DEFS in level.js
+    const parts = [
+      { key: 'robobody',      nw: 207, nh: 261, ox:  0,   oy:  0   },
+      { key: 'robohead',      nw: 210, nh: 245, ox:  0,   oy: -250 },
+      { key: 'roboarm_left',  nw: 150, nh: 300, ox: -170,  oy:  30   },
+      { key: 'roboarm_right', nw: 125, nh: 300, ox:  160,  oy:  30  },
+      { key: 'roboleg',       nw: 150, nh: 270, ox: -50,  oy:  270 },
+      { key: 'roboleg_r',     nw: 150, nh: 270, ox:  50,  oy:  270 },
+    ];
+
+    // Compute centre of robot assembly (same as level 1: cx, cy)
+    const cx = centerX;
+    const cy = topY + 80; // vertical centre of the robot
+
+    // Animation offsets
+    let headRot = 0;
+    let armLRot = 0, armRRot = 0;
+    let armROx = 0, armROy = 0;
+    let bodyBounce = 0;
+    let glowAlpha = 0;
+    let assembleProgress = 1;
+
+    if (phase < 0.18) {
+      // robot.init() — parts slide into place
+      const p = phase / 0.18;
+      assembleProgress = 1 - Math.pow(1 - p, 3);
+    } else if (phase < 0.36) {
+      // head.scan() — head tilts left/right
+      const p = (phase - 0.18) / 0.18;
+      headRot = Math.sin(p * Math.PI * 3) * 0.15;
+    } else if (phase < 0.54) {
+      // arm.right() — right arm waves
+      const p = (phase - 0.36) / 0.18;
+      armRRot = Math.sin(p * Math.PI * 2) * 0.3;
+    } else if (phase < 0.72) {
+      // arm.left() — left arm waves
+      const p = (phase - 0.54) / 0.18;
+      armLRot = Math.sin(p * Math.PI * 2) * 0.3;
+    } else {
+      const p = (phase - 0.72) / 0.28;
+      bodyBounce = -Math.abs(Math.sin(p * Math.PI * 2)) * 6;
+      glowAlpha = 0.3 + 0.3 * Math.sin(p * Math.PI * 4);
+    }
+
+    // Glow
+    if (glowAlpha > 0) {
+      ctx.save();
+      const grd = ctx.createRadialGradient(cx, cy, 10, cx, cy, 100);
+      grd.addColorStop(0, `rgba(0, 230, 220, ${glowAlpha})`);
+      grd.addColorStop(1, 'rgba(0, 230, 220, 0)');
+      ctx.fillStyle = grd;
+      ctx.fillRect(cx - 100, cy - 100, 200, 200);
+      ctx.restore();
+    }
+
+    const slideOff = 1 - assembleProgress;
+
+    // Slide-in directions per part
+    const slideVecs = [
+      [0, -120],   // body from top
+      [0, -150],   // head from above
+      [-100, 0],   // left arm from left
+      [100, 0],    // right arm from right
+      [-60, 120],  // left leg from bottom-left
+      [60, 120],   // right leg from bottom-right
+    ];
+
+    const drawPart = (idx, extraRot, extraOx, extraOy) => {
+      const def = parts[idx];
+      const img = this._sprites.getImage(def.key === 'roboleg_r' ? 'roboleg' : def.key);
+      if (!img) return;
+
+      const pw = def.nw * PS;
+      const ph = def.nh * PS;
+      // Target position — same formula as level 1
+      const tx = cx + def.ox * PS - pw / 2;
+      const ty = cy + def.oy * PS - ph / 2;
+
+      const sv = slideVecs[idx];
+      const sx = tx + sv[0] * slideOff + extraOx;
+      const sy = ty + sv[1] * slideOff + extraOy + bodyBounce;
+
+      const pivX = sx + pw / 2;
+      const pivY = sy + ph * 0.2;
+
+      ctx.save();
+      if (def.key === 'roboleg_r') {
+        // Flip horizontally for right leg
+        ctx.translate(pivX, pivY);
+        ctx.scale(-1, 1);
+        ctx.rotate(extraRot);
+        ctx.translate(-pivX, -pivY);
+      } else {
+        ctx.translate(pivX, pivY);
+        ctx.rotate(extraRot);
+        ctx.translate(-pivX, -pivY);
+      }
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      this._sprites.drawImage(ctx, def.key === 'roboleg_r' ? 'roboleg' : def.key, sx, sy, pw, ph);
+      ctx.restore();
+    };
+
+    // Draw back-to-front: legs, arms, body, head
+    drawPart(4, 0, 0, 0);                          // left leg
+    drawPart(5, 0, 0, 0);                          // right leg
+    drawPart(2, armLRot, 0, 0);                    // left arm
+    drawPart(3, armRRot, armROx, armROy);           // right arm
+    drawPart(0, 0, 0, 0);                          // body
+    drawPart(1, headRot, 0, 0);                    // head
   }
 
   _drawPlaceholderQR(ctx, x, y, size) {
