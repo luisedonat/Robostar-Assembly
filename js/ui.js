@@ -63,62 +63,104 @@ export class UI {
   drawHUD(ctx, levelName, timerMs, parts) {
     // Frosted top bar
     ctx.save();
-    const grad = ctx.createLinearGradient(0, 0, 0, 56);
+    const grad = ctx.createLinearGradient(0, 0, 0, 96);
     grad.addColorStop(0, COLORS.navy + 'F0');
     grad.addColorStop(1, COLORS.navy + '00');
     ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, GAME_WIDTH, 56);
+    ctx.fillRect(0, 0, GAME_WIDTH, 96);
     ctx.restore();
 
-    // Part indicators — rounded pills
-    const partColors = [COLORS.petrol, COLORS.teal, COLORS.lightPetrol];
-    const pillW = 24;
-    const pillH = 24;
-    const pillGap = 8;
-    const totalPillW = 3 * pillW + 2 * pillGap;
-    const startX = (GAME_WIDTH - totalPillW) / 2;
+    // ── Modern step indicator ──
+    const stepY = 32;
+    const stepRadius = 14;
+    const stepGap = 80;           // centre-to-centre distance
+    const totalW = 2 * stepGap;   // 3 dots, 2 gaps
+    const startX = (GAME_WIDTH - totalW) / 2;
+
+    const labelList = ['Design', 'Manufacturing', 'Software'];
+
     for (let i = 0; i < 3; i++) {
-      const px = startX + i * (pillW + pillGap);
+      const cx = startX + i * stepGap;
       const active = parts[i];
+
+      // Connector line to previous dot
+      if (i > 0) {
+        const prevX = startX + (i - 1) * stepGap;
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(prevX + stepRadius + 2, stepY);
+        ctx.lineTo(cx - stepRadius - 2, stepY);
+        ctx.strokeStyle = parts[i - 1] ? '#00E6DC' : '#333353';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Circle
       ctx.save();
-      this.drawRoundedRect(ctx, px, 8, pillW, pillH, 6);
-      ctx.fillStyle = active ? partColors[i] : COLORS.darkPanel;
-      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx, stepY, stepRadius, 0, Math.PI * 2);
       if (active) {
-        ctx.shadowColor = partColors[i];
-        ctx.shadowBlur = 8;
+        ctx.fillStyle = '#00E6DC';
+        ctx.fill();
+        ctx.shadowColor = '#00E6DC';
+        ctx.shadowBlur = 10;
+      } else {
+        ctx.fillStyle = '#333353';
+        ctx.fill();
+        ctx.strokeStyle = '#66667E';
+        ctx.lineWidth = 1;
+        ctx.stroke();
       }
       ctx.restore();
+
+      // Number inside circle
       ctx.save();
-      ctx.font = `700 12px ${FONT}`;
-      ctx.fillStyle = active ? COLORS.white : COLORS.midPanel;
+      ctx.font = `600 11px ${FONT}`;
+      ctx.fillStyle = active ? '#000028' : '#9999A9';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(String(i + 1), px + pillW / 2, 8 + pillH / 2);
+      ctx.fillText(String(i + 1), cx, stepY + 1);
+      ctx.restore();
+
+      // Label underneath — lighter teal, bigger font
+      ctx.save();
+      ctx.font = `500 10px ${FONT}`;
+      ctx.fillStyle = active ? '#00BEDC' : '#9999A9';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(labelList[i], cx, stepY + stepRadius + 6);
       ctx.restore();
     }
 
-    // Level name
+    // Thin separator line
     ctx.save();
-    ctx.font = `500 11px ${FONT}`;
-    ctx.fillStyle = COLORS.petrol;
-    ctx.textBaseline = 'top';
-    ctx.textAlign = 'left';
-    ctx.fillText(levelName, 14, 36);
+    ctx.strokeStyle = '#333353';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(14, 72);
+    ctx.lineTo(GAME_WIDTH - 14, 72);
+    ctx.stroke();
     ctx.restore();
 
-    // Timer
-    const timeStr = this.formatTime(timerMs);
-  ctx.save();
-  ctx.font = `500 11px ${MONO}`;
-  ctx.fillStyle = COLORS.yellow;
-  ctx.textBaseline = 'top';
-  ctx.textAlign = 'right';
-  // place timer at right margin now that mute buttons are removed
-  ctx.fillText(timeStr, GAME_WIDTH - 14, 36);
-  ctx.restore();
+    // Level name — left
+    ctx.save();
+    ctx.font = `500 10px ${FONT}`;
+    ctx.fillStyle = '#00BEDC';
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'left';
+    ctx.fillText(levelName, 14, 78);
+    ctx.restore();
 
-    // No mute buttons: only sound effects are enabled (music removed)
+    // Timer — right
+    const timeStr = this.formatTime(timerMs);
+    ctx.save();
+    ctx.font = `500 10px ${MONO}`;
+    ctx.fillStyle = '#CCCCD4';
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'right';
+    ctx.fillText(timeStr, GAME_WIDTH - 14, 78);
+    ctx.restore();
   }
 
   /** HUD tap handler — no mute buttons, so always return false (not consumed) */

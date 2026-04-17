@@ -59,7 +59,7 @@ class BlueprintPuzzleLevel {
     this._draggingIdx = -1;
 
     const cx = GAME_WIDTH / 2;
-    const cy = GAME_HEIGHT * 0.33;
+    const cy = GAME_HEIGHT * 0.36;
 
     this._parts = PART_DEFS.map((def) => {
       const pw = def.nw * PART_SCALE;
@@ -178,7 +178,7 @@ class BlueprintPuzzleLevel {
 
     // Workbench panel with rounded corners
     ctx.save();
-    roundRect(ctx, 14, GAME_HEIGHT * 0.08, GAME_WIDTH - 28, GAME_HEIGHT * 0.48, 12);
+    roundRect(ctx, 14, GAME_HEIGHT * 0.12, GAME_WIDTH - 28, GAME_HEIGHT * 0.46, 12);
     ctx.fillStyle = COLORS.darkPanel;
     ctx.fill();
     ctx.strokeStyle = COLORS.teal + '80';
@@ -191,7 +191,7 @@ class BlueprintPuzzleLevel {
     ctx.fillStyle = COLORS.petrol;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    ctx.fillText('Virtual Workbench', GAME_WIDTH / 2, GAME_HEIGHT * 0.08 + 16);
+    ctx.fillText('Virtual Workbench', GAME_WIDTH / 2, GAME_HEIGHT * 0.12 + 16);
     ctx.font = `500 11px ${FONT}`;
     ctx.fillStyle = COLORS.midPanel;
     ctx.restore();
@@ -656,6 +656,12 @@ class DoodleJumpLevel {
     ctx.fillStyle = COLORS.navy;
     ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
+    // Clip game content below the HUD area (96px)
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 96, GAME_WIDTH, GAME_HEIGHT - 96);
+    ctx.clip();
+
     // Factory background
     this._drawBackground(ctx, this._scrollY, this._bgTime);
 
@@ -741,15 +747,18 @@ class DoodleJumpLevel {
       ctx.restore();
     }
 
+    // End game-area clip
+    ctx.restore();
+
     // Progress bar — rounded
     ctx.save();
-    roundRect(ctx, 4, 56, 8, GAME_HEIGHT - 96, 4);
+    roundRect(ctx, 4, 96, 8, GAME_HEIGHT - 136, 4);
     ctx.fillStyle = COLORS.darkPanel;
     ctx.fill();
     const progressPct = Math.min(this._maxReached / this._targetHeight, 1);
-    const barH = (GAME_HEIGHT - 96) * progressPct;
+    const barH = (GAME_HEIGHT - 136) * progressPct;
     if (barH > 0) {
-      roundRect(ctx, 4, 56 + (GAME_HEIGHT - 96) - barH, 8, barH, 4);
+      roundRect(ctx, 4, 96 + (GAME_HEIGHT - 136) - barH, 8, barH, 4);
       ctx.fillStyle = COLORS.yellow;
       ctx.fill();
     }
@@ -860,7 +869,7 @@ class CodePuzzleLevel {
     const editorLeft = 52;  // after gutter
     const editorRight = GAME_WIDTH - 16;
     const slotW = editorRight - editorLeft - 8;
-    const slotStartY = 158;  // after header/tabs/function line (compact)
+    const slotStartY = 198;  // after header/tabs/function line (compact)
 
     this._slots = CODE_BLOCKS.map((def, i) => ({
       label: def.label,
@@ -883,7 +892,7 @@ class CodePuzzleLevel {
 
     // Tray is positioned dynamically in render() based on status bar position
     // We compute it here based on the same editor metrics
-    const editorTop = 56;
+    const editorTop = 96;
     const editorH = GAME_HEIGHT * 0.38;
     const codeTop = editorTop + 28;
     const statusBarBottom = codeTop + editorH + 22; // status bar = 22px
@@ -1016,7 +1025,7 @@ class CodePuzzleLevel {
     ctx.fillStyle = COLORS.navy;
     ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-    const editorTop = 56;
+    const editorTop = 96;
     const editorLeft = 0;
     const editorW = GAME_WIDTH;
     const editorH = GAME_HEIGHT * 0.38;
