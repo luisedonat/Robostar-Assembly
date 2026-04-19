@@ -13,6 +13,8 @@ export class UI {
     this._sprites = sprites || null;
     this._animTime = 0; // animation timer for end screen robot
     this._linkBtnRect = null; // hit area for mobile feedback link
+    this._qrImg = new Image();
+    this._qrImg.src = 'assets/qr-code.png';
   }
 
   update(dt) {
@@ -171,7 +173,13 @@ export class UI {
 
   /** Check if a tap hit the mobile feedback link button. Returns true if consumed. */
   handleLinkTap(x, y) {
-    return false; // disabled for now
+    const r = this._linkBtnRect;
+    if (!r) return false;
+    if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) {
+      window.open('https://robostar-ideas.dev.inspire.siemens.com/', '_blank');
+      return true;
+    }
+    return false;
   }
 
   _drawMuteBtn(ctx, x, y, isOn, type) {
@@ -419,13 +427,17 @@ export class UI {
       ctx.fillStyle = '#9999A9';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.fillText('example link', GAME_WIDTH / 2, btnY + btnH + 8);
+      ctx.fillText('robostar-ideas.dev.inspire.siemens.com', GAME_WIDTH / 2, btnY + btnH + 8);
       ctx.restore();
     } else {
       // QR code for desktop
       const qrSize = 100;
       const qrX = (GAME_WIDTH - qrSize) / 2;
-      this._drawPlaceholderQR(ctx, qrX, qrY, qrSize);
+      if (this._qrImg && this._qrImg.complete && this._qrImg.naturalWidth > 0) {
+        ctx.drawImage(this._qrImg, qrX, qrY, qrSize, qrSize);
+      } else {
+        this._drawPlaceholderQR(ctx, qrX, qrY, qrSize);
+      }
       this._linkBtnRect = null;
     }
 

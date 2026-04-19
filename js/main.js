@@ -49,7 +49,7 @@ async function boot() {
   sm.register('gameComplete', new GameCompleteState(sm, ui, input, progress));
   setLoadProgress(90);
 
-  sm.change('menu');
+  sm.change('gameComplete');
   setLoadProgress(100);
 
   // Hold loading screen for ~4 seconds so the credit text is readable
