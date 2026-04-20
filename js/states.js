@@ -1,5 +1,5 @@
 import { createLevel } from './level.js';
-import { PARTS } from './progress.js';
+import { PARTS, LEVEL_NAMES, Leaderboard } from './progress.js';
 import { playLevelComplete, playVictory, unlockAudio } from './audio.js';
 
 export class StateMachine {
@@ -51,16 +51,41 @@ export class MenuState {
     this.progress = progress;
   }
 
-  enter() {}
-  exit() {}
+  enter() {
+    // Blur name input when re-entering menu
+    this.ui._nameFieldFocused = false;
+  }
+  exit() {
+    // Hide keyboard when leaving menu
+    if (this.ui._nameInput) {
+      this.ui._nameInput.blur();
+      this.ui._nameInput.style.pointerEvents = 'none';
+    }
+    this.ui._nameFieldFocused = false;
+  }
 
   update(dt) {
     this.ui.update(dt);
+    if (this.input.tap) {
+      const tx = this.input.tapX;
+      const ty = this.input.tapY;
+      // Check if tap hit the name field
+      if (this.ui.handleNameFieldTap(tx, ty)) {
+        this.input.consumeTap();
+        return;
+      }
+    }
     if (this.input.consumeTap() || this.input.keys.action) {
   this.input.keys.action = false;
+  // Don't start game if name field is focused — just unfocus
+  if (this.ui._nameFieldFocused) {
+    this.ui._nameFieldFocused = false;
+    if (this.ui._nameInput) this.ui._nameInput.blur();
+    return;
+  }
   unlockAudio();
-  this.input.requestTiltPermission();   // request gyroscope access (iOS)
-  this.input.requestFullscreen();        // hide browser chrome (Android)
+  this.input.requestTiltPermission();
+  this.input.requestFullscreen();
       this.progress.reset();
       this.sm.change('playing', { levelIndex: 0 });
     }
@@ -116,7 +141,7 @@ export class PlayingState {
       } else {
         playLevelComplete();
         const next = this.progress.nextLevelIndex;
-        this.sm.change('playing', { levelIndex: next });
+        this.sm.change('levelTransition', { levelIndex: next });
       }
     }
   }
@@ -131,6 +156,53 @@ export class PlayingState {
       this.progress.hasPart('ai_core'),
     ];
     this.ui.drawHUD(ctx, this.level.name, this.progress.runTimeMs + this.level.timerMs, parts);
+  }
+}
+
+/* ---- Level Transition State ---- */
+
+const TRANSITION_DURATION = 2.5; // seconds
+
+export class LevelTransitionState {
+  constructor(sm, ui, input, progress) {
+    this.sm = sm;
+    this.ui = ui;
+    this.input = input;
+    this.progress = progress;
+    this._levelIndex = 0;
+    this._timer = 0;
+  }
+
+  enter(params) {
+    this._levelIndex = params.levelIndex ?? 0;
+    this._timer = 0;
+    this.input.consumeTap();
+    // Show loading overlay and reset its bar
+    const loadingScreen = document.getElementById('loading-screen');
+    const loadingBar = document.getElementById('loading-bar');
+    if (loadingScreen) loadingScreen.classList.remove('hidden');
+    if (loadingBar) loadingBar.style.width = '0%';
+  }
+
+  exit() {}
+
+  update(dt) {
+    this.ui.update(dt);
+    this._timer += dt;
+    // Animate the loading bar
+    const pct = Math.min(this._timer / TRANSITION_DURATION, 1) * 100;
+    const loadingBar = document.getElementById('loading-bar');
+    if (loadingBar) loadingBar.style.width = `${pct}%`;
+    if (this._timer >= TRANSITION_DURATION) {
+      // Hide loading overlay before starting next minigame
+      const loadingScreen = document.getElementById('loading-screen');
+      if (loadingScreen) loadingScreen.classList.add('hidden');
+      this.sm.change('playing', { levelIndex: this._levelIndex });
+    }
+  }
+
+  render(ctx) {
+    // HTML overlay covers the canvas — nothing to draw
   }
 }
 
@@ -188,6 +260,13 @@ export class GameCompleteState {
     this._inputDelay = 0.8;
     this.input.consumeTap();
     this.input.consumeDragEnd();
+
+    // Save to leaderboard
+    if (this.ui._leaderboard) {
+      const name = this.ui._playerName || 'Anonymous';
+      const rank = this.ui._leaderboard.addEntry(name, this.progress.totalTime);
+      this.ui._lastRank = rank;
+    }
   }
 
   exit() {}

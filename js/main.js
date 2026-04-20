@@ -2,11 +2,12 @@ import { Engine } from './engine.js';
 import { Input } from './input.js';
 import { SpriteManager } from './sprites.js';
 import { UI } from './ui.js';
-import { Progress } from './progress.js';
+import { Progress, Leaderboard } from './progress.js';
 import {
   StateMachine,
   MenuState,
   PlayingState,
+  LevelTransitionState,
   LevelCompleteState,
   GameCompleteState,
 } from './states.js';
@@ -39,12 +40,15 @@ async function boot() {
 
   const ui = new UI(sprites);
   const progress = new Progress();
+  const leaderboard = new Leaderboard();
+  ui._leaderboard = leaderboard;
   setLoadProgress(70);
 
   const sm = new StateMachine();
 
   sm.register('menu', new MenuState(sm, ui, input, progress));
   sm.register('playing', new PlayingState(sm, ui, input, progress, sprites));
+  sm.register('levelTransition', new LevelTransitionState(sm, ui, input, progress));
   sm.register('levelComplete', new LevelCompleteState(sm, ui, input, progress));
   sm.register('gameComplete', new GameCompleteState(sm, ui, input, progress));
   setLoadProgress(90);

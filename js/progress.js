@@ -97,3 +97,54 @@ export class Progress {
 }
 
 export { PARTS, LEVEL_NAMES };
+
+/* ---- Leaderboard ---- */
+
+const LB_KEY = 'robostar_leaderboard';
+const MAX_ENTRIES = 10;
+
+export class Leaderboard {
+  constructor() {
+    this.entries = []; // { name, time }
+    this.load();
+  }
+
+  load() {
+    try {
+      const raw = localStorage.getItem(LB_KEY);
+      if (raw) this.entries = JSON.parse(raw);
+    } catch (_) {
+      this.entries = [];
+    }
+  }
+
+  save() {
+    try {
+      localStorage.setItem(LB_KEY, JSON.stringify(this.entries));
+    } catch (_) { /* storage unavailable */ }
+  }
+
+  addEntry(name, totalTimeMs) {
+    this.entries.push({ name: name || 'Anonymous', time: totalTimeMs });
+    this.entries.sort((a, b) => a.time - b.time);
+    if (this.entries.length > MAX_ENTRIES) {
+      this.entries = this.entries.slice(0, MAX_ENTRIES);
+    }
+    this.save();
+    return this.getRank(totalTimeMs, name);
+  }
+
+  /** Get rank (1-based) of a specific time. Returns the position of the last-added entry with that name+time. */
+  getRank(totalTimeMs, name) {
+    for (let i = 0; i < this.entries.length; i++) {
+      if (this.entries[i].time === totalTimeMs && this.entries[i].name === name) {
+        return i + 1;
+      }
+    }
+    return -1;
+  }
+
+  getTop(n = 5) {
+    return this.entries.slice(0, n);
+  }
+}

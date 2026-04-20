@@ -15,6 +15,25 @@ export class UI {
     this._linkBtnRect = null; // hit area for mobile feedback link
     this._qrImg = new Image();
     this._qrImg.src = 'assets/qr-code.png';
+    this._qrMobileImg = new Image();
+    this._qrMobileImg.src = 'assets/qr-codeMobile.png';
+
+    // Name input
+    this._nameInput = document.getElementById('name-input');
+    this._playerName = '';
+    this._nameFieldRect = null; // hit area for name field
+    this._nameFieldFocused = false;
+    this._leaderboard = null; // set from outside
+    this._lastRank = -1;      // set after game complete
+
+    if (this._nameInput) {
+      this._nameInput.addEventListener('input', () => {
+        this._playerName = this._nameInput.value.slice(0, 12);
+      });
+      this._nameInput.addEventListener('blur', () => {
+        this._nameFieldFocused = false;
+      });
+    }
   }
 
   update(dt) {
@@ -182,6 +201,22 @@ export class UI {
     return false;
   }
 
+  /** Check if a tap hit the name input field on the menu screen. */
+  handleNameFieldTap(x, y) {
+    const r = this._nameFieldRect;
+    if (!r) return false;
+    if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) {
+      this._nameFieldFocused = true;
+      if (this._nameInput) {
+        this._nameInput.value = this._playerName;
+        this._nameInput.style.pointerEvents = 'auto';
+        this._nameInput.focus();
+      }
+      return true;
+    }
+    return false;
+  }
+
   _drawMuteBtn(ctx, x, y, isOn, type) {
     ctx.save();
 
@@ -265,15 +300,148 @@ export class UI {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
   // Main title gradient per brand guidance
-  const titleGrad = ctx.createLinearGradient(GAME_WIDTH / 2 - 140, GAME_HEIGHT * 0.16, GAME_WIDTH / 2 + 140, GAME_HEIGHT * 0.16);
+  const titleGrad = ctx.createLinearGradient(GAME_WIDTH / 2 - 140, GAME_HEIGHT * 0.10, GAME_WIDTH / 2 + 140, GAME_HEIGHT * 0.10);
   titleGrad.addColorStop(0, '#00E6DC');
   titleGrad.addColorStop(1, '#00FFB9');
   ctx.fillStyle = titleGrad;
-  ctx.fillText('Robostar', GAME_WIDTH / 2, GAME_HEIGHT * 0.16);
-  ctx.fillText('Assembly', GAME_WIDTH / 2, GAME_HEIGHT * 0.16 + 44);
+  ctx.fillText('Robostar', GAME_WIDTH / 2, GAME_HEIGHT * 0.10);
+  ctx.fillText('Assembly', GAME_WIDTH / 2, GAME_HEIGHT * 0.10 + 44);
   ctx.restore();
 
-    this._drawRobostarImage(ctx, GAME_WIDTH / 2, GAME_HEIGHT * 0.34, 160);
+    // Subtitle
+    ctx.save();
+  // First subtitle (normal)
+  ctx.font = `500 13px ${FONT}`;
+  ctx.fillStyle = '#E5E5E9';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('How fast can you assemble a Robot?', GAME_WIDTH / 2, GAME_HEIGHT * 0.10 + 98);
+  // Second subtitle (big, teal)
+  ctx.font = `700 20px ${FONT}`;
+  ctx.fillStyle = '#00E6DC';
+  ctx.fillText('Play the Game and Beat the Highscore!', GAME_WIDTH / 2, GAME_HEIGHT * 0.10 + 122);
+  ctx.restore();
+
+    // Name input field
+    const fieldW = 200;
+    const fieldH = 36;
+    const fieldX = (GAME_WIDTH - fieldW) / 2;
+    const fieldY = GAME_HEIGHT * 0.10 + 160;
+    this._nameFieldRect = { x: fieldX, y: fieldY, w: fieldW, h: fieldH };
+
+    ctx.save();
+    this.drawRoundedRect(ctx, fieldX, fieldY, fieldW, fieldH, 8);
+    ctx.fillStyle = this._nameFieldFocused ? '#1B1B3A' : '#0A0A2E';
+    ctx.fill();
+    ctx.strokeStyle = this._nameFieldFocused ? '#00E6DC' : '#333353';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    ctx.font = `500 14px ${FONT}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    if (this._playerName) {
+      ctx.fillStyle = '#E5E5E9';
+      ctx.fillText(this._playerName, GAME_WIDTH / 2, fieldY + fieldH / 2);
+    } else {
+      ctx.fillStyle = '#666680';
+      ctx.fillText('Enter your name', GAME_WIDTH / 2, fieldY + fieldH / 2);
+    }
+    // Blinking cursor when focused
+    if (this._nameFieldFocused) {
+      const textW = ctx.measureText(this._playerName || '').width;
+      const cursorAlpha = 0.5 + 0.5 * Math.sin(this._blink * 4);
+      ctx.globalAlpha = cursorAlpha;
+      ctx.fillStyle = '#00E6DC';
+      const cursorX = GAME_WIDTH / 2 + (this._playerName ? textW / 2 + 2 : 0);
+      ctx.fillRect(cursorX, fieldY + 8, 1.5, fieldH - 16);
+    }
+    ctx.restore();
+
+    // "Scan QR" prompt
+    const qrTextY = fieldY + fieldH + 16;
+    ctx.save();
+    ctx.font = `500 12px ${FONT}`;
+    ctx.fillStyle = '#E5E5E9';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('Scan the QR code to play on your phone!', GAME_WIDTH / 2, qrTextY);
+    ctx.restore();
+
+    // Robot and QR side by side
+    const pairY = qrTextY + 24;
+    const pairSize = 120;
+    const gap = 16;
+    const pairTotalW = pairSize * 2 + gap;
+    const pairStartX = (GAME_WIDTH - pairTotalW) / 2;
+
+    // Robot on the left
+    this._drawRobostarImage(ctx, pairStartX + pairSize / 2, pairY, pairSize);
+
+    // QR on the right
+    const qrX = pairStartX + pairSize + gap;
+    if (this._qrMobileImg && this._qrMobileImg.complete && this._qrMobileImg.naturalWidth > 0) {
+      ctx.drawImage(this._qrMobileImg, qrX, pairY, pairSize, pairSize);
+    }
+
+    // Leaderboard
+    const lbTop = this._leaderboard ? this._leaderboard.getTop(5) : [];
+    if (lbTop.length > 0) {
+      const lbY = GAME_HEIGHT * 0.58;
+
+      ctx.save();
+      ctx.font = `600 13px ${FONT}`;
+      ctx.fillStyle = '#00E6DC';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText('🏆  Highscores', GAME_WIDTH / 2, lbY);
+      ctx.restore();
+
+      // Divider
+      ctx.save();
+      ctx.strokeStyle = '#00E6DC30';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(60, lbY + 22);
+      ctx.lineTo(GAME_WIDTH - 60, lbY + 22);
+      ctx.stroke();
+      ctx.restore();
+
+      for (let i = 0; i < lbTop.length; i++) {
+        const entry = lbTop[i];
+        const rowY = lbY + 32 + i * 28;
+        const isFirst = i === 0;
+
+        // Rank number
+        ctx.save();
+        ctx.font = `700 12px ${FONT}`;
+        ctx.fillStyle = isFirst ? '#FFE784' : '#9999A9';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'top';
+        ctx.fillText(`${i + 1}.`, 72, rowY);
+        ctx.restore();
+
+        // Name
+        ctx.save();
+        ctx.font = `500 12px ${FONT}`;
+        ctx.fillStyle = isFirst ? '#FFE784' : '#E5E5E9';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(entry.name, 82, rowY);
+        ctx.restore();
+
+        // Time
+        ctx.save();
+        ctx.font = `500 12px ${MONO}`;
+        ctx.fillStyle = isFirst ? '#FFE784' : COLORS.yellow;
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'top';
+        ctx.fillText(this.formatTime(entry.time), GAME_WIDTH - 60, rowY);
+        ctx.restore();
+      }
+    }
 
     // Pulsing call-to-action
     const alpha = 0.5 + 0.5 * Math.sin(this._blink * 2.5);
@@ -283,7 +451,7 @@ export class UI {
     ctx.fillStyle = COLORS.coral;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-  ctx.fillText('Tap to start', GAME_WIDTH / 2, GAME_HEIGHT * 0.68);
+  ctx.fillText('Tap to start', GAME_WIDTH / 2, GAME_HEIGHT * 0.82);
     ctx.restore();
 
     // Footer
@@ -293,6 +461,63 @@ export class UI {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
   ctx.restore();
+  }
+
+  /* ---- Level Transition ---- */
+
+  drawLevelTransition(ctx, levelIndex, levelName, progress) {
+    ctx.fillStyle = COLORS.navy;
+    ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+    // Fade in effect
+    const fadeIn = Math.min(progress * 3, 1); // fade in over first third
+
+    ctx.save();
+    ctx.globalAlpha = fadeIn;
+
+    // Step indicator (e.g. "Level 2 of 3")
+    ctx.font = `500 14px ${FONT}`;
+    ctx.fillStyle = '#9999A9';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(`Level ${levelIndex + 1} of 3`, GAME_WIDTH / 2, GAME_HEIGHT * 0.32);
+
+    // Level name
+    ctx.font = `800 30px ${FONT}`;
+    const grad = ctx.createLinearGradient(GAME_WIDTH / 2 - 120, GAME_HEIGHT * 0.38, GAME_WIDTH / 2 + 120, GAME_HEIGHT * 0.38);
+    grad.addColorStop(0, '#00E6DC');
+    grad.addColorStop(1, '#00FFB9');
+    ctx.fillStyle = grad;
+    ctx.fillText(levelName, GAME_WIDTH / 2, GAME_HEIGHT * 0.38);
+
+    // Loading bar
+    const barW = 200;
+    const barH = 4;
+    const barX = (GAME_WIDTH - barW) / 2;
+    const barY = GAME_HEIGHT * 0.48;
+
+    // Track
+    this.drawRoundedRect(ctx, barX, barY, barW, barH, 2);
+    ctx.fillStyle = '#333353';
+    ctx.fill();
+
+    // Fill
+    const fillW = barW * progress;
+    if (fillW > 0) {
+      this.drawRoundedRect(ctx, barX, barY, fillW, barH, 2);
+      const barGrad = ctx.createLinearGradient(barX, barY, barX + barW, barY);
+      barGrad.addColorStop(0, '#00E6DC');
+      barGrad.addColorStop(1, '#00FFB9');
+      ctx.fillStyle = barGrad;
+      ctx.fill();
+    }
+
+    // "Get ready" text
+    ctx.font = `500 13px ${FONT}`;
+    ctx.fillStyle = '#E5E5E9';
+    ctx.fillText('Get ready…', GAME_WIDTH / 2, GAME_HEIGHT * 0.52);
+
+    ctx.restore();
   }
 
   /* ---- Level Complete ---- */
@@ -442,14 +667,14 @@ export class UI {
     }
 
     // Total time card
-    this.drawBox(ctx, 40, 500, GAME_WIDTH - 80, 70, COLORS.darkPanel + 'CC', COLORS.teal + '60', 10);
+    this.drawBox(ctx, 40, 500, GAME_WIDTH - 80, 90, COLORS.darkPanel + 'CC', COLORS.teal + '60', 10);
 
     ctx.save();
     ctx.font = `500 12px ${FONT}`;
     ctx.fillStyle = '#E5E5E9';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    ctx.fillText('Total time', GAME_WIDTH / 2, 513);
+    ctx.fillText('Total time', GAME_WIDTH / 2, 506);
     ctx.restore();
 
     ctx.save();
@@ -457,8 +682,25 @@ export class UI {
     ctx.fillStyle = COLORS.yellow;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    ctx.fillText(this.formatTime(progress.totalTime), GAME_WIDTH / 2, 537);
+    ctx.fillText(this.formatTime(progress.totalTime), GAME_WIDTH / 2, 524);
     ctx.restore();
+
+    // Rank display
+    if (this._lastRank > 0) {
+      ctx.save();
+      ctx.font = `600 13px ${FONT}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      if (this._lastRank <= 3) {
+        const medals = ['🥇', '🥈', '🥉'];
+        ctx.fillStyle = '#FFE784';
+        ctx.fillText(`${medals[this._lastRank - 1]}  Rank #${this._lastRank} on the leaderboard!`, GAME_WIDTH / 2, 558);
+      } else {
+        ctx.fillStyle = '#E5E5E9';
+        ctx.fillText(`Rank #${this._lastRank} on the leaderboard`, GAME_WIDTH / 2, 558);
+      }
+      ctx.restore();
+    }
 
     // Best times section
     ctx.save();
@@ -466,7 +708,7 @@ export class UI {
     ctx.fillStyle = '#00D7A0';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    ctx.fillText('Best times', GAME_WIDTH / 2, 590);
+    ctx.fillText('Best times', GAME_WIDTH / 2, 600);
     ctx.restore();
 
     // Divider
@@ -474,15 +716,15 @@ export class UI {
     ctx.strokeStyle = COLORS.teal + '30';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(60, 612);
-    ctx.lineTo(GAME_WIDTH - 60, 612);
+    ctx.moveTo(60, 622);
+    ctx.lineTo(GAME_WIDTH - 60, 622);
     ctx.stroke();
     ctx.restore();
 
     const labels = ['Design', 'Manufacturing', 'Software'];
     for (let i = 0; i < 3; i++) {
       const t = progress.data.bestTimes[i];
-      const rowY = 626 + i * 36;
+      const rowY = 636 + i * 36;
 
       ctx.save();
       ctx.font = `500 13px ${FONT}`;
